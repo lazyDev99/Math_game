@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CALC DUEL — 1v1 Math Duel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* display font weight override (kept for future font swaps) */
+.title-word,.rounds-val,.start-btn,.cd-num,.half-score,.penalty-pop,.rt-display,
+.rr-winner,.rr-box .n,.rr-vs,.fin-winner,.fin-result-label,.stat-box .sv,
+.play-again-btn,.modal-title,.modal-close{font-weight:600}
+:root{
+  --bg:#F7F4EF;
+  --paper:#FFFFFF;
+  --ink:#111010;
+  --ink2:#3A3632;
+  --muted:#9E9890;
+  --border:#E4DFD8;
+  --p1:#1557E8;
+  --p1-light:#EBF0FF;
+  --p2:#D93B14;
+  --p2-light:#FFF0EC;
+  --gold:#E8A200;
+  --green:#0F9E58;
+  --green-light:#E0F7EC;
+  --red-light:#FFF0EC;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);
+  --r:16px;--r-sm:10px;--r-lg:24px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',sans-serif;color:var(--ink);touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .28s ease,transform .28s ease;background:var(--bg)}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
+
+/* TITLE */
+#titleScreen{background:var(--paper);overflow:hidden}
+.title-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.45}
+.title-content{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;padding:0 24px}
+.title-eyebrow{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.title-word{font-family:'Bebas Neue',sans-serif;font-size:clamp(96px,26vw,152px);line-height:.88;letter-spacing:.03em;color:var(--ink)}
+.title-word em{color:var(--p2);font-style:normal}
+.title-tagline{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:12px;margin-bottom:24px}
+
+/* OPPONENT SELECTOR — Friend vs CPU, with a difficulty sub-picker */
+.opp-row{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(300px,86vw);margin-bottom:18px}
+.cpu-diff-ctrl{display:none;width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.cpu-diff-ctrl.show{display:flex}
+.cpu-diff-desc{display:none;font-family:'Inter',sans-serif;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.4;padding:0 4px}
+.cpu-diff-desc.show{display:block}
+.cpu-diff-btn{flex:1;padding:8px 2px;border:none;background:transparent;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;transition:background .15s,color .15s}
+.cpu-diff-btn.active{background:var(--p2);color:#FFF}
+body.dark .cpu-diff-ctrl{background:var(--paper)}
+.name-wrap.cpu-locked{opacity:.55}
+
+.names-row{display:flex;gap:10px;width:min(340px,88vw)}
+.name-wrap{flex:1;display:flex;flex-direction:column;gap:6px}
+.name-color-bar{height:3px;border-radius:2px}
+.name-color-bar.p1{background:var(--p1)}
+.name-color-bar.p2{background:var(--p2)}
+.name-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--ink);outline:none;transition:border-color .2s;text-align:center;direction:ltr}
+.name-input:focus{border-color:var(--ink)}
+.rounds-row{display:flex;align-items:center;gap:14px;margin-top:18px}
+.rounds-label{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.rounds-ctrl{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.rounds-btn{width:40px;height:40px;border:none;background:transparent;font-size:20px;font-weight:700;cursor:pointer;color:var(--ink2);display:flex;align-items:center;justify-content:center;transition:background .15s}
+.rounds-btn:active{background:var(--border)}
+.rounds-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--ink);min-width:36px;text-align:center;line-height:1}
+.rounds-divider{width:1px;height:24px;background:var(--border)}
+
+/* MODE SELECTOR — Normal vs Complex */
+.mode-row{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:20px;width:min(300px,86vw)}
+.mode-ctrl{display:flex;width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.mode-btn{flex:1;padding:10px 4px;border:none;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;transition:background .15s,color .15s}
+.mode-btn.active{background:var(--ink);color:#FFF}
+.mode-desc{font-family:'Inter',sans-serif;font-size:11px;color:var(--muted);text-align:center;line-height:1.4;min-height:28px}
+body.dark .mode-ctrl{background:var(--paper)}
+.start-btn{margin-top:22px;width:min(340px,88vw);background:var(--ink);color:#FFF;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.1em;padding:18px;border:none;border-radius:var(--r);cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3);transition:transform .1s,box-shadow .1s}
+.start-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+
+/* COUNTDOWN */
+#countdownScreen{background:var(--bg)}
+.cd-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:4px}
+.cd-half.top{transform:rotate(180deg)}
+.cd-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(100px,28vw,160px);line-height:1;color:var(--ink)}
+.cd-num.go{color:var(--p2)}
+.cd-sub{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--muted)}
+.cd-divider{width:100%;height:2px;background:var(--border);flex-shrink:0}
+@keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* GAME SCREEN */
+#gameScreen{padding:0;gap:0;justify-content:stretch}
+.player-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;min-height:0;gap:8px}
+.player-half.p1{transform:rotate(180deg)}
+.half-header{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 2px}
+.half-name{font-family:'Inter',sans-serif;font-size:13px;font-weight:800}
+.half-name.p1{color:var(--p1)}.half-name.p2{color:var(--p2)}
+.half-score{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1}
+.half-score.p1{color:var(--p1)}.half-score.p2{color:var(--p2)}
+.half-round{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--muted)}
+
+/* done checkmark overlay on card */
+.done-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-lg);opacity:0;pointer-events:none;
+  font-size:56px;transition:opacity .2s;z-index:5;
+}
+.done-overlay.show{opacity:1}
+.done-overlay.p1bg{background:rgba(21,87,232,.12)}
+.done-overlay.p2bg{background:rgba(217,59,20,.12)}
+
+/* Stimulus card */
+.stim-card{
+  width:min(300px,86vw);background:var(--paper);border-radius:var(--r-lg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:var(--shadow);flex-shrink:0;transition:transform .08s;
+  overflow:hidden;position:relative;padding:28px 12px 20px;gap:4px;
+}
+.stim-question{font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em;position:absolute;top:10px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.stim-symbol{font-size:clamp(40px,11vw,60px);line-height:1;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;white-space:nowrap;padding:0 4px}
+
+/* BLACKOUT — equation briefly vanishes; card keeps its size, choices stay
+   tappable underneath the mask the whole time. */
+.blackout-mask{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:4px;pointer-events:none;background:var(--paper);
+}
+.stim-card.blackout-hidden .stim-symbol{visibility:hidden}
+.stim-card.blackout-hidden .blackout-mask{display:flex}
+.blackout-mask-icon{font-size:26px;animation:blackoutPulse 1.1s ease-in-out infinite}
+.blackout-mask-label{font-family:'Inter',sans-serif;font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+@keyframes blackoutPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+
+/* FREEZE — disables tapping without hiding the problem. A small badge
+   floats over the answer area to show the countdown, but the buttons
+   underneath stay fully legible (just untappable). */
+.freeze-overlay{
+  position:absolute;top:-34px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(21,87,232,.92);box-shadow:0 2px 8px rgba(0,0,0,.18);
+  opacity:0;pointer-events:none;transition:opacity .2s;z-index:8;
+}
+.freeze-overlay.show{opacity:1}
+.freeze-ic{font-size:13px;line-height:1}
+.freeze-sec{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:#fff;letter-spacing:.02em}
+.freeze-label{font-family:'Inter',sans-serif;font-size:9px;font-weight:800;color:#DCE7FF;letter-spacing:.08em;text-transform:uppercase}
+.answer-row-wrap{position:relative;width:min(300px,86vw)}
+.cpu-thinking{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);display:none;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.cpu-thinking.show{display:block;animation:cpuPulse 1.1s ease-in-out infinite}
+@keyframes cpuPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.answer-row-wrap.frozen .answer-row{opacity:.6;filter:saturate(.5)}
+.stim-hint{font-size:11px;font-weight:700;color:var(--muted);font-family:'Inter',sans-serif;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.stim-card.wrong{animation:cardWrong .28s ease}
+@keyframes cardWrong{0%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}100%{transform:translateX(0)}}
+.stim-card.correct{animation:cardCorrect .42s cubic-bezier(.33,1,.68,1)}
+@keyframes cardCorrect{
+  0%{transform:scale(1,1)}
+  22%{transform:scale(1.14,.92)}
+  46%{transform:scale(.96,1.06)}
+  70%{transform:scale(1.04,.98)}
+  100%{transform:scale(1,1)}
+}
+/* hitstop flash — a bright white pulse timed to the punch, sells the "impact" */
+.hitstop-flash{position:absolute;inset:0;border-radius:var(--r-lg);background:#fff;opacity:0;pointer-events:none;z-index:6}
+.hitstop-flash.go{animation:hitstopFlash .28s ease-out}
+@keyframes hitstopFlash{0%{opacity:0}12%{opacity:.5}100%{opacity:0}}
+
+/* Penalty pop */
+.penalty-pop{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:52px;pointer-events:none;opacity:0;z-index:10}
+.penalty-pop.p1c{color:var(--p1)}.penalty-pop.p2c{color:var(--p2)}
+.penalty-pop.show{animation:penaltyAnim .6s ease forwards}
+@keyframes penaltyAnim{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-80%) scale(.8)}}
+
+/* Answer buttons — 2 per row, larger */
+.answer-row{display:grid;grid-template-columns:1fr 1fr;width:min(300px,86vw);gap:9px}
+.ans-btn{height:64px;border:none;border-radius:var(--r);font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--border),var(--shadow-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s cubic-bezier(.34,1.56,.64,1),filter .1s;-webkit-tap-highlight-color:transparent;min-width:0;padding:0 4px;text-align:center;line-height:1.15;white-space:nowrap}
+.ans-btn:active{transform:scale(.94);filter:brightness(.93)}
+.ans-btn.flash-correct{animation:btnOk .32s ease}
+.ans-btn.flash-wrong{animation:btnBad .28s ease}
+@keyframes btnOk{0%{background:var(--paper)}50%{background:var(--green-light)}100%{background:var(--paper)}}
+@keyframes btnBad{0%{background:var(--paper)}50%{background:var(--red-light)}100%{background:var(--paper)}}
+
+/* FIRST-ROUND HINT — shown once ever, teaches the tap without a tutorial screen */
+.first-hint{font-family:'Inter',sans-serif;font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;opacity:0;transition:opacity .25s;pointer-events:none;text-align:center;min-height:14px}
+.first-hint.show{opacity:1;animation:hintPulse 1s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* RT display inside half — shown after player answers */
+.rt-display{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);letter-spacing:.04em;min-height:26px}
+.rt-display.fast{color:var(--green)}
+
+/* Center strip */
+.center-strip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 0;background:var(--bg);border-top:2px solid var(--border);border-bottom:2px solid var(--border)}
+.mode-badge{display:none;font-family:'Inter',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--p2);text-transform:uppercase}
+.mode-badge.show{display:block}
+.streak-row{display:flex;gap:5px}
+.s-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s,transform .18s}
+.s-dot.p1{background:var(--p1);transform:scale(1.25)}
+.s-dot.p2{background:var(--p2);transform:scale(1.25)}
+.s-dot.tie{background:var(--gold);transform:scale(1.1)}
+.timer-wrap{width:min(200px,58vw);height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.timer-fill{height:100%;border-radius:3px;background:var(--p1);transition:width .1s linear,background .3s}
+
+/* Penalty overlay */
+.pen-overlay{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:90}
+.pen-overlay.show{opacity:1}
+.pen-overlay.p1o{background:linear-gradient(to bottom,rgba(21,87,232,.18),transparent 50%)}
+.pen-overlay.p2o{background:linear-gradient(to top,rgba(217,59,20,.18),transparent 50%)}
+
+/* ROUND RESULT */
+#roundResult{background:var(--bg);padding:0;gap:0;justify-content:stretch}
+.rr-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 20px}
+.rr-half.top{transform:rotate(180deg)}
+.rr-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.rr-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,56px);line-height:1;letter-spacing:.02em}
+.rr-winner.p1{color:var(--p1)}.rr-winner.p2{color:var(--p2)}.rr-winner.tie{color:var(--gold)}
+.rr-times{display:flex;gap:10px;align-items:stretch}
+.rr-box{text-align:center;padding:10px 14px;border-radius:var(--r);background:var(--paper);box-shadow:var(--shadow-sm);min-width:80px;display:flex;flex-direction:column;justify-content:center}
+.rr-box .n{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1}
+.rr-box.p1 .n{color:var(--p1)}.rr-box.p2 .n{color:var(--p2)}
+.rr-box .l{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:var(--muted)}
+.rr-vs{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--border);align-self:center}
+
+/* FINAL SCREEN */
+#finalScreen{background:var(--bg);padding:0;gap:0;justify-content:stretch;overflow:hidden}
+.fin-half{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;gap:5px;
+  padding:10px 14px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transition:background .5s;min-height:0;
+}
+.fin-half.top{transform:rotate(180deg);justify-content:flex-start}
+/* P2 half needs bottom padding so fixed button doesn't cover content */
+.fin-half:not(.top){padding-bottom:72px}
+.fin-half.winner-bg{background:linear-gradient(135deg,rgba(14,158,88,.08),transparent)}
+.fin-half.loser-bg{background:transparent;opacity:.75}
+.fin-trophy{font-size:38px;line-height:1;flex-shrink:0}
+.fin-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;flex-shrink:0}
+.fin-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,9vw,54px);line-height:1;letter-spacing:.02em;flex-shrink:0}
+.fin-winner.p1{color:var(--p1)}.fin-winner.p2{color:var(--p2)}.fin-winner.tie{color:var(--gold)}
+.fin-result-label{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;flex-shrink:0}
+.fin-result-label.win{color:var(--green)}.fin-result-label.lose{color:var(--muted)}
+.stat-grid{display:flex;gap:7px;width:min(300px,84vw);margin-top:2px;flex-shrink:0}
+.stat-box{flex:1;background:var(--paper);border-radius:var(--r);padding:8px 6px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-box .sv{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1}
+.stat-box .sk{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;color:var(--muted);margin-top:1px}
+.stat-box.p1 .sv{color:var(--p1)}.stat-box.p2 .sv{color:var(--p2)}
+.verdict-box{width:min(300px,84vw);background:var(--ink);border-radius:var(--r);padding:10px 14px;text-align:center;margin-top:2px;flex-shrink:0}
+.verdict-box .vt{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:4px}
+.verdict-box .vb{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;line-height:1.5;color:#DDD8D0}
+.verdict-box .vb strong{color:#FFF}
+/* Fixed restart button — always visible at bottom */
+.play-again-btn{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--ink);color:#FFF;
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.08em;
+  padding:16px;border:none;cursor:pointer;
+  box-shadow:0 -2px 12px rgba(0,0,0,.15);
+  transition:filter .1s;z-index:200;
+  display:none;/* hidden until final screen */
+}
+.play-again-btn:active{filter:brightness(1.3)}
+#finalScreen:not(.hidden) .play-again-btn{display:block}
+
+/* Winner flash animation */
+@keyframes winnerPulse{0%,100%{box-shadow:inset 0 0 0 0 rgba(14,158,88,0)}50%{box-shadow:inset 0 0 0 4px rgba(14,158,88,.35)}}
+.fin-half.winner-flash{animation:winnerPulse 1s ease 3}
+
+/* PARTICLES */
+.particle{position:fixed;pointer-events:none;animation:pFly .7s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes pFly{
+  0%{transform:translate(0,0) scale(1) rotate(0deg);opacity:1}
+  70%{opacity:1}
+  100%{transform:translate(var(--tx),var(--ty)) scale(0) rotate(var(--rot));opacity:0}
+}
+
+/* DARK MODE */
+body.dark{
+  --bg:#141210;--paper:#1E1B18;--ink:#F0EDE8;--ink2:#C8C2BA;
+  --muted:#6B6560;--border:#2E2A26;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.35);
+  --shadow:0 4px 16px rgba(0,0,0,.5),0 1px 4px rgba(0,0,0,.3);
+}
+body.dark .title-grid{opacity:.12}
+body.dark .name-input{background:var(--paper);color:var(--ink)}
+body.dark .ans-btn{color:var(--ink)}
+body.dark .rounds-ctrl{background:var(--paper)}
+
+/* POLISH PASS */
+:root{
+  --bg:#f3f1ec;
+  --paper:#fff;
+  --ink:#171717;
+  --ink2:#393632;
+  --muted:#8d8880;
+  --border:#ded9d1;
+  --p1:#2864f0;
+  --p1-light:#eaf0ff;
+  --p2:#e34b25;
+  --p2-light:#fff0eb;
+  --gold:#f2b632;
+  --shadow-sm:0 2px 6px rgba(27,24,20,.08);
+  --shadow:0 18px 40px rgba(27,24,20,.12),0 3px 8px rgba(27,24,20,.08);
+}
+button,input{font:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(40,100,240,.42);outline-offset:3px}
+#titleScreen::before,#titleScreen::after{
+  content:"";position:absolute;width:42vw;height:42vw;border-radius:50%;
+  filter:blur(70px);opacity:.14;pointer-events:none;
+}
+#titleScreen::before{background:var(--p1);left:-18vw;top:18vh}
+#titleScreen::after{background:var(--p2);right:-18vw;bottom:12vh}
+.title-grid{opacity:.3;mask-image:linear-gradient(to bottom,transparent,#000 20%,#000 80%,transparent)}
+.title-content{z-index:1}
+.title-eyebrow{letter-spacing:.28em}
+.title-word{font-size:clamp(84px,24vw,144px);text-shadow:3px 4px 0 rgba(21,87,232,.08)}
+.title-tagline{margin-bottom:20px}
+.opp-row,.mode-row{background:rgba(255,255,255,.62);padding:10px;border:1px solid rgba(222,217,209,.8);border-radius:18px;box-shadow:var(--shadow-sm)}
+.opp-row{gap:7px;margin-bottom:12px}
+.mode-row{margin-top:14px}
+.names-row{gap:12px}
+.name-input{background:rgba(247,244,239,.8);border-color:var(--border);box-shadow:inset 0 1px 2px rgba(0,0,0,.03)}
+.rounds-row{margin-top:14px}
+.start-btn{margin-top:16px;border-radius:18px;letter-spacing:.14em;box-shadow:0 5px 0 #34312e,0 12px 24px rgba(17,16,16,.14);transition:transform .12s,box-shadow .12s,filter .12s}
+.start-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.start-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #34312e,0 4px 10px rgba(17,16,16,.12)}
+.dark-toggle{backdrop-filter:blur(8px);background:rgba(255,255,255,.5)}
+
+#gameScreen{background:var(--bg)}
+.player-half{position:relative;padding:12px 12px;gap:10px}
+.player-half::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1}
+.player-half.p1::before{background:linear-gradient(to bottom,rgba(40,100,240,.1),transparent 52%)}
+.player-half.p2::before{background:linear-gradient(to top,rgba(227,75,37,.1),transparent 52%)}
+.half-header{max-width:330px}
+.half-name{font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.half-score{font-size:42px;text-shadow:0 2px 0 rgba(0,0,0,.06)}
+.half-round{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.stim-card{width:min(310px,88vw);min-height:132px;border:1px solid rgba(255,255,255,.8);box-shadow:var(--shadow);border-radius:26px;padding:31px 14px 22px}
+.stim-card::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,var(--p1),var(--p2))}
+.stim-question{font-size:10px;letter-spacing:.14em}
+.stim-symbol{font-size:clamp(42px,11vw,62px);letter-spacing:-.03em}
+.answer-row-wrap{width:min(310px,88vw)}
+.answer-row{width:min(310px,88vw);gap:10px}
+.ans-btn{height:66px;border:1px solid rgba(222,217,209,.8);border-radius:16px;box-shadow:0 5px 0 #d5d0c8,0 9px 18px rgba(27,24,20,.08);transition:transform .1s cubic-bezier(.34,1.56,.64,1),box-shadow .1s,filter .1s,background .15s}
+.ans-btn:hover{background:#faf9f7}
+.ans-btn:active{transform:translateY(4px) scale(.98);box-shadow:0 1px 0 #d5d0c8}
+.freeze-overlay{top:50%;left:50%;transform:translate(-50%,-50%);flex-direction:column;gap:1px;width:118px;height:80px;padding:8px;border-radius:20px;background:rgba(36,111,190,.9);box-shadow:0 10px 24px rgba(22,70,120,.25);backdrop-filter:blur(4px)}
+.freeze-ic{font-size:18px}
+.freeze-sec{font-size:20px}
+.freeze-label{font-size:8px}
+.center-strip{min-height:42px;padding:6px 12px;gap:4px;background:rgba(255,255,255,.72);border-top:1px solid var(--border);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+.mode-badge{font-size:8px}
+.match-progress{font-family:'Inter',sans-serif;font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--ink2);text-transform:uppercase}
+.s-dot{width:7px;height:7px}
+.pen-overlay.p1o{background:linear-gradient(to bottom,rgba(40,100,240,.2),transparent 50%)}
+.pen-overlay.p2o{background:linear-gradient(to top,rgba(227,75,37,.2),transparent 50%)}
+
+#roundResult{background:var(--bg)}
+.rr-half{gap:10px}
+.rr-winner{font-size:clamp(40px,11vw,62px);text-shadow:0 3px 0 rgba(0,0,0,.06)}
+.rr-box{border:1px solid rgba(222,217,209,.7);box-shadow:var(--shadow-sm)}
+.rr-box .n{font-size:30px}
+.fin-half{position:relative}
+.fin-half.winner-bg{background:radial-gradient(circle at center,rgba(15,158,88,.13),transparent 65%)}
+.fin-half.loser-bg{opacity:.66}
+.fin-trophy{font-size:42px;filter:drop-shadow(0 5px 7px rgba(0,0,0,.12))}
+.fin-winner{font-size:clamp(38px,10vw,58px);text-shadow:0 3px 0 rgba(0,0,0,.06)}
+.stat-grid{gap:8px}
+.stat-box{border:1px solid rgba(222,217,209,.7);box-shadow:var(--shadow-sm);padding:10px 6px}
+.stat-box .sv{font-size:24px}
+.verdict-box{box-shadow:0 10px 24px rgba(0,0,0,.15)}
+.play-again-btn{box-shadow:0 -4px 18px rgba(0,0,0,.12);letter-spacing:.14em}
+body.dark .opp-row,body.dark .mode-row{background:rgba(30,27,24,.72);border-color:var(--border)}
+body.dark .name-input{background:rgba(30,27,24,.8)}
+body.dark .dark-toggle{background:rgba(30,27,24,.7)}
+body.dark .center-strip{background:rgba(30,27,24,.78)}
+@media (max-height:700px){
+  .title-word{font-size:clamp(70px,20vw,112px)}
+  .title-tagline{margin-top:8px;margin-bottom:10px}
+  .opp-row,.mode-row{padding:7px}
+  .rounds-row{margin-top:8px}
+  .start-btn{margin-top:10px;padding:14px}
+  .player-half{gap:6px;padding:7px 10px}
+  .stim-card{min-height:112px;padding-top:27px}
+  .ans-btn{height:56px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* DARK TOGGLE */
+.dark-toggle{
+  position:absolute;top:14px;right:14px;width:36px;height:36px;
+  border-radius:50%;border:1.5px solid var(--border);background:transparent;
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,background .2s;z-index:10;
+}
+.dark-toggle:active{transform:scale(.88)}
+
+/* ABOUT BUTTON */
+.about-btn{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+  color:var(--muted);letter-spacing:.1em;text-transform:uppercase;
+  background:none;border:1px solid var(--border);border-radius:20px;
+  padding:5px 14px;cursor:pointer;transition:color .2s,border-color .2s;
+  white-space:nowrap;
+}
+.about-btn:hover{color:var(--ink);border-color:var(--muted)}
+
+/* ABOUT MODAL */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;opacity:0;pointer-events:none;transition:opacity .22s;padding:20px;
+}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal-box{
+  background:var(--paper);border-radius:var(--r-lg);
+  padding:26px 22px 20px;width:min(370px,92vw);max-height:82vh;
+  overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);
+  transform:translateY(12px);transition:transform .22s;
+  font-family:'Inter',sans-serif;
+}
+.modal-backdrop.open .modal-box{transform:translateY(0)}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:.04em;color:var(--ink);margin-bottom:2px}
+.modal-tag{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px;display:block}
+.modal-section{margin-bottom:14px}
+.modal-section h3{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.modal-section p{font-size:13px;color:var(--ink2);line-height:1.65;margin-bottom:6px}
+.modal-section ul{padding-left:14px;margin:0}
+.modal-section li{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:3px}
+.modal-divider{height:1px;background:var(--border);margin:14px 0}
+.modal-close{
+  width:100%;margin-top:6px;padding:13px;
+  background:var(--ink);color:#FFF;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;
+  border:none;border-radius:var(--r);cursor:pointer;transition:filter .1s;
+}
+.modal-close:active{filter:brightness(1.4)}
+</style>
+</head>
+<body>
+
+<div class="pen-overlay p1o" id="penO1"></div>
+<div class="pen-overlay p2o" id="penO2"></div>
+
+<!-- TITLE -->
+<div class="screen" id="titleScreen">
+  <div class="title-grid"></div>
+  <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">🌙</button>
+  <div class="title-content">
+    <div class="title-eyebrow">1v1 · Math Duel</div>
+    <div class="title-word">CALC <em>D</em>UEL</div>
+    <div class="title-tagline">Solve Faster · Don't Guess · Win</div>
+    <div class="opp-row">
+      <div class="mode-ctrl">
+        <button class="mode-btn active" id="oppFriendBtn">👥 Friend</button>
+        <button class="mode-btn" id="oppCpuBtn">🤖 CPU</button>
+      </div>
+      <div class="cpu-diff-ctrl" id="cpuDiffCtrl">
+        <button class="cpu-diff-btn" id="diffEasyBtn">Below Avg</button>
+        <button class="cpu-diff-btn active" id="diffMediumBtn">Average</button>
+        <button class="cpu-diff-btn" id="diffHardBtn">Above Avg</button>
+        <button class="cpu-diff-btn" id="diffEliteBtn">Elite</button>
+      </div>
+      <div class="cpu-diff-desc" id="cpuDiffDesc">My best estimate of a typical player's speed and accuracy on this game, reasoned from arithmetic-cognition research — not measured data.</div>
+    </div>
+    <div class="names-row">
+      <div class="name-wrap">
+        <div class="name-color-bar p1"></div>
+        <input class="name-input" id="name1" type="text" placeholder="Blue Player" maxlength="10">
+      </div>
+      <div class="name-wrap" id="name2Wrap">
+        <div class="name-color-bar p2"></div>
+        <input class="name-input" id="name2" type="text" placeholder="Red Player" maxlength="10">
+      </div>
+    </div>
+    <div class="rounds-row">
+      <span class="rounds-label">Rounds</span>
+      <div class="rounds-ctrl">
+        <button class="rounds-btn" id="rMinus">−</button>
+        <div class="rounds-divider"></div>
+        <div class="rounds-val" id="rVal">10</div>
+        <div class="rounds-divider"></div>
+        <button class="rounds-btn" id="rPlus">+</button>
+      </div>
+    </div>
+    <div class="mode-row">
+      <div class="mode-ctrl">
+        <button class="mode-btn active" id="modeNormalBtn">Normal</button>
+        <button class="mode-btn" id="modeComplexBtn">Complex</button>
+        <button class="mode-btn" id="modeBlackoutBtn">Blackout</button>
+      </div>
+      <div class="mode-desc" id="modeDesc">Friendly percentages and algebra mixed with classic arithmetic. Starts gentle, ramps up as you go.</div>
+    </div>
+    <button class="start-btn" id="startBtn">▶ START DUEL</button>
+  </div>
+  <button class="about-btn" id="aboutBtn">About & Instructions</button>
+</div>
+
+<!-- ABOUT MODAL -->
+<div class="modal-backdrop" id="aboutModal">
+  <div class="modal-box">
+    <div class="modal-title">CALC DUEL</div>
+    <span class="modal-tag">1v1 Math Duel</span>
+
+    <div class="modal-section">
+      <h3>What is this?</h3>
+      <p>CALC DUEL is a two-player math duel on one phone. Both players see the same equation at the same instant. First correct answer takes the round — but a wrong guess freezes your side of the screen, so guessing costs you far more than it saves.</p>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="modal-section">
+      <h3>How to play</h3>
+      <ul>
+        <li>Rest the phone flat between two players, one on each end.</li>
+        <li>A question appears on both sides at once, with four possible answers — all very close to each other, so only the exact answer is safe.</li>
+        <li>Whoever taps the correct answer first wins that round's point.</li>
+        <li>The round ends the instant either player answers correctly — even if the other player is frozen. If both players get locked out, nobody scores.</li>
+      </ul>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="modal-section">
+      <h3>The freeze penalty</h3>
+      <ul>
+        <li>A wrong answer freezes your side of the screen — no tapping until it thaws.</li>
+        <li>The freeze is about as long as that question normally takes to solve, so harder questions freeze you longer.</li>
+        <li>Answer wrong in the first quarter of that time and it counts as a guess: the freeze doubles.</li>
+        <li>You get two tries per round. A second wrong answer locks you out until the next round.</li>
+      </ul>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="modal-section">
+      <h3>Game modes</h3>
+      <ul>
+        <li><strong>Normal</strong> — friendly percentages (10%, 25%…) and one-step algebra, plus two easy warm-ups, then it ramps up.</li>
+        <li><strong>Complex</strong> — awkward percentages (11%, 17%, 29%…), multi-step algebra with negatives, and multi-step expressions from round one.</li>
+        <li><strong>Blackout</strong> — same as Complex, plus the equation vanishes mid-round so you have to solve from memory, and a wrong guess blanks out one or two digits on your side.</li>
+      </ul>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="modal-section">
+      <h3>Scoring</h3>
+      <ul>
+        <li>Most correct answers across all rounds wins the match.</li>
+        <li>Questions get harder as the match goes on. Roughly 70% are percentages and algebra; the rest are classic arithmetic.</li>
+        <li>Reaction times are tracked quietly and revealed at the end, alongside the final score.</li>
+      </ul>
+    </div>
+
+    <button class="modal-close" id="modalClose">Got it — Let's Play</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="screen hidden" id="countdownScreen">
+  <div class="cd-half top">
+    <div class="cd-num" id="cdN1">3</div>
+    <div class="cd-sub">GET READY</div>
+  </div>
+  <div class="cd-divider"></div>
+  <div class="cd-half">
+    <div class="cd-num" id="cdN2">3</div>
+    <div class="cd-sub">GET READY</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen hidden" id="gameScreen">
+  <!-- P1 half (rotated, far — blue) -->
+  <div class="player-half p1">
+    <div class="half-header">
+      <span class="half-name p1" id="gName1">—</span>
+      <span class="half-round" id="gRound1">Round 1</span>
+      <span class="half-score p1" id="gScore1">—</span>
+    </div>
+    <div class="stim-card" id="stim1">
+      <div class="stim-question" id="sQ1"></div>
+      <div class="stim-symbol" id="sSym1">?</div>
+      <div class="stim-hint" id="sHint1"></div>
+      <div class="hitstop-flash" id="flash1"></div>
+      <div class="done-overlay p1bg" id="done1">✓</div>
+      <div class="blackout-mask">
+        <div class="blackout-mask-icon">🧠</div>
+        <div class="blackout-mask-label">Recall it</div>
+      </div>
+    </div>
+    <div class="answer-row-wrap" id="rowWrap1">
+      <div class="answer-row" id="btns1"></div>
+      <div class="freeze-overlay" id="freezeOv1">
+        <div class="freeze-ic">❄️</div>
+        <div class="freeze-sec" id="freezeSec1">5.0s</div>
+        <div class="freeze-label">Frozen</div>
+      </div>
+      <div class="cpu-thinking" id="cpuThinking1">🤖 thinking…</div>
+    </div>
+    <div class="first-hint" id="hint1">Tap the right answer — fast!</div>
+  </div>
+
+  <!-- Center strip -->
+  <div class="center-strip">
+    <div class="mode-badge" id="modeBadge">COMPLEX MODE</div>
+    <div class="match-progress" id="matchProgress">ROUND 1 / 10</div>
+    <div class="streak-row" id="streakRow"></div>
+  </div>
+
+  <!-- P2 half (upright, near — red) -->
+  <div class="player-half p2">
+    <div class="half-header">
+      <span class="half-score p2" id="gScore2">—</span>
+      <span class="half-round" id="gRound2">Round 1</span>
+      <span class="half-name p2" id="gName2">—</span>
+    </div>
+    <div class="stim-card" id="stim2">
+      <div class="stim-question" id="sQ2"></div>
+      <div class="stim-symbol" id="sSym2">?</div>
+      <div class="stim-hint" id="sHint2"></div>
+      <div class="hitstop-flash" id="flash2"></div>
+      <div class="done-overlay p2bg" id="done2">✓</div>
+      <div class="blackout-mask">
+        <div class="blackout-mask-icon">🧠</div>
+        <div class="blackout-mask-label">Recall it</div>
+      </div>
+    </div>
+    <div class="answer-row-wrap" id="rowWrap2">
+      <div class="answer-row" id="btns2"></div>
+      <div class="freeze-overlay" id="freezeOv2">
+        <div class="freeze-ic">❄️</div>
+        <div class="freeze-sec" id="freezeSec2">5.0s</div>
+        <div class="freeze-label">Frozen</div>
+      </div>
+    </div>
+    <div class="first-hint" id="hint2">Tap the right answer — fast!</div>
+  </div>
+</div>
+
+<!-- ROUND RESULT (auto-advances, no button) -->
+<div class="screen hidden" id="roundResult">
+  <div class="rr-half top">
+    <div class="rr-label">ROUND RESULT</div>
+    <div class="rr-winner" id="rrW1">—</div>
+    <div class="rr-times">
+      <div class="rr-box p1"><div class="n" id="rrT1a">—</div><div class="l" id="rrN1a">—</div></div>
+      <div class="rr-vs">VS</div>
+      <div class="rr-box p2"><div class="n" id="rrT2a">—</div><div class="l" id="rrN2a">—</div></div>
+    </div>
+  </div>
+  <div class="cd-divider"></div>
+  <div class="rr-half">
+    <div class="rr-label">ROUND RESULT</div>
+    <div class="rr-winner" id="rrW2">—</div>
+    <div class="rr-times">
+      <div class="rr-box p1"><div class="n" id="rrT1b">—</div><div class="l" id="rrN1b">—</div></div>
+      <div class="rr-vs">VS</div>
+      <div class="rr-box p2"><div class="n" id="rrT2b">—</div><div class="l" id="rrN2b">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div class="screen hidden" id="finalScreen">
+  <div class="fin-half top" id="finHalf1">
+    <div class="fin-trophy" id="finTr1">🏆</div>
+    <div class="fin-result-label" id="finRL1">—</div>
+    <div class="fin-winner" id="finW1">—</div>
+    <div class="stat-grid" id="finGrid1"></div>
+    <div id="catTable1"></div>
+  </div>
+  <div class="cd-divider"></div>
+  <div class="fin-half" id="finHalf2">
+    <div class="fin-trophy" id="finTr2">🏆</div>
+    <div class="fin-result-label" id="finRL2">—</div>
+    <div class="fin-winner" id="finW2">—</div>
+    <div class="stat-grid" id="finGrid2"></div>
+    <div id="catTable2"></div>
+    <div class="verdict-box" id="finVerdict"></div>
+  </div>
+  <button class="play-again-btn" id="againBtn">PLAY AGAIN ↺</button>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────
+const BETWEEN_MS    = 1600;   // pause between rounds
+const NUM_CHOICES   = 4;      // multiple-choice options per question
+
+// Freeze penalty for a wrong answer: escalates every wrong answer across
+// the whole match (not per-round). 3s, 5s, 7s, 9s...
+// ── ANTI-GUESSING RULES ──────────────────────────────
+// A wrong answer only hurts if the penalty is about as long as it takes the
+// opponent to solve THAT question, so the freeze scales with the question's
+// typical solve time (not with how many mistakes you've made all match).
+//   1st wrong answer in a round → freeze ≈ 1.25× typical solve time
+//                                  (doubled if it came in the first quarter
+//                                   of that time — that's a guess, not a slip)
+//   2nd wrong answer in a round → locked out until the next round
+// If both players get locked out, nobody scores the round.
+const FREEZE_MULT = 1.25;
+const FREEZE_MIN_MS = 3000, FREEZE_MAX_MS = 15000, FREEZE_HARD_CAP_MS = 24000;
+const FAST_WRONG_FRAC = 0.25;     // wrong within 25% of typical solve time = a guess
+const FAST_WRONG_MULT = 2;
+const MAX_GUESSES_PER_ROUND = 2;
+function typicalSolveMs(){
+  const b = G.stimulus.cpu || estimateHumanPerformance(G.stimulus.symbol);
+  return b.timeMs;
+}
+function freezeDurationFor(elapsedMs){ // elapsedMs = time since the round started
+  const typ = typicalSolveMs();
+  let ms = clamp(typ*FREEZE_MULT, FREEZE_MIN_MS, FREEZE_MAX_MS);
+  if(elapsedMs < typ*FAST_WRONG_FRAC) ms = Math.min(ms*FAST_WRONG_MULT, FREEZE_HARD_CAP_MS);
+  return Math.round(ms);
+}
+
+// ── MATH EQUATION ENGINE ─────────────────────────────
+// All operands are single digits (1-9) — the RESULT is free to be larger.
+// Exactly two rounds in the whole match are "simple" (one plain addition,
+// one plain subtraction) — WHICH round gets which is randomized per match
+// via G.simpleMap so it's never predictable. Every other round draws from
+// a complex two-step pool that itself gets harder as the match goes on.
+// A factorial question shows up in roughly 3 of every 10 classic rounds, with varied
+// templates so it doesn't always land on the same couple of numbers.
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function d(){ return randInt(1,9); } // a single digit, 1-9
+
+function fact(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+
+// Pick a single-digit dividend/divisor pair that divides evenly, e.g. 8÷2.
+function divisiblePair(){
+  const DIVISORS={1:[1],2:[1,2],3:[1,3],4:[1,2,4],5:[1,5],6:[1,2,3,6],7:[1,7],8:[1,2,4,8],9:[1,3,9]};
+  const a=d();
+  const divs=DIVISORS[a];
+  const b=divs[randInt(0,divs.length-1)];
+  return {a,b,q:a/b};
+}
+
+function genSimpleAdd(){
+  const a=d(), b=d();
+  return { text:`${a} + ${b}`, answer:a+b };
+}
+function genSimpleSub(){
+  let a=d(), b=d();
+  if(a<b) [a,b]=[b,a];
+  return { text:`${a} − ${b}`, answer:a-b };
+}
+
+// Two-step but the gentler half of the complex pool: a single multiply or
+// exact divide combined with one add/sub, or a plain three-term add/sub
+// chain — varied forms, still just one "harder" operation at most.
+const COMPLEX_EASY = [
+  // (a × b) ± c
+  function(){
+    const a=d(), b=d(), c=d();
+    const op=Math.random()<0.5?'+':'−';
+    const product=a*b;
+    if(op==='−' && product<c) return COMPLEX_EASY[0]();
+    const answer = op==='+' ? product+c : product-c;
+    return { text:`(${a} × ${b}) ${op} ${c}`, answer };
+  },
+  // (a ÷ b) ± c — exact division
+  function(){
+    const {a,b,q}=divisiblePair();
+    const c=d();
+    const op=Math.random()<0.5?'+':'−';
+    if(op==='−' && q<c) return COMPLEX_EASY[1]();
+    const answer = op==='+' ? q+c : q-c;
+    return { text:`(${a} ÷ ${b}) ${op} ${c}`, answer };
+  },
+  // a × b ± c — same math as #1 but unparenthesized (× still binds first)
+  function(){
+    const a=d(), b=d(), c=d();
+    const op=Math.random()<0.5?'+':'−';
+    const product=a*b;
+    if(op==='−' && product<c) return COMPLEX_EASY[2]();
+    const answer = op==='+' ? product+c : product-c;
+    return { text:`${a} × ${b} ${op} ${c}`, answer };
+  },
+  // a + b − c — three-term add/sub chain, no multiplication at all
+  function(){
+    const a=d(), b=d(), c=d();
+    const mid=a+b;
+    if(mid<c) return COMPLEX_EASY[3]();
+    return { text:`${a} + ${b} − ${c}`, answer:mid-c };
+  },
+  // a − b + c — three-term add/sub chain, other order
+  function(){
+    let a=d(), b=d(); const c=d();
+    if(a<b) [a,b]=[b,a];
+    return { text:`${a} − ${b} + ${c}`, answer:(a-b)+c };
+  },
+];
+
+// The harder half: distribution / order-of-operations forms, triple
+// products, and order-of-operations division — same single digits, but
+// you have to apply the right operator precedence.
+const COMPLEX_HARD = [
+  // (a + b) × c — grouped, sum first
+  function(){
+    const a=d(), b=d(), c=d();
+    return { text:`(${a} + ${b}) × ${c}`, answer:(a+b)*c };
+  },
+  // (a − b) × c — grouped, difference first
+  function(){
+    let a=d(), b=d(); const c=d();
+    if(a<b) [a,b]=[b,a];
+    return { text:`(${a} − ${b}) × ${c}`, answer:(a-b)*c };
+  },
+  // a + b × c — no parentheses, standard order of operations (× before +)
+  function(){
+    const a=d(), b=d(), c=d();
+    return { text:`${a} + ${b} × ${c}`, answer:a+b*c };
+  },
+  // a − b × c — no parentheses, standard order of operations (× before −)
+  function(){
+    const a=d(), b=d(), c=d();
+    return { text:`${a} − ${b} × ${c}`, answer:a-b*c };
+  },
+  // c + a ÷ b — order of operations, division before addition, exact
+  function(){
+    const {a,b,q}=divisiblePair();
+    const c=d();
+    return { text:`${c} + ${a} ÷ ${b}`, answer:c+q };
+  },
+  // c − a ÷ b — order of operations, division before subtraction, exact
+  function(){
+    const {a,b,q}=divisiblePair();
+    const c=d();
+    return { text:`${c} − ${a} ÷ ${b}`, answer:c-q };
+  },
+];
+
+// Probability of drawing from the HARD half climbs as the match progresses,
+// so the complex rounds themselves ramp up in difficulty over time.
+function genEquationComplex(progress){
+  const hardChance = 0.25 + progress*0.6; // ~25% early → ~85% late
+  const pool = Math.random() < hardChance ? COMPLEX_HARD : COMPLEX_EASY;
+  const gen = pool[randInt(0,pool.length-1)];
+  return gen();
+}
+
+// Find single-digit (2-9) divisors of a factorial result, for the exact
+// "a! ÷ b" template below.
+function factorialDivisors(fa){
+  const out=[];
+  for(let n=2;n<=9;n++){ if(fa%n===0) out.push(n); }
+  return out;
+}
+
+// Varied factorial templates — argument ranges 2-6 (max 720), combined with
+// add/sub, multiply-first order-of-operations, exact division, or a second
+// smaller factorial — so it isn't always "3! ± b" or "5! ± b".
+const FACTORIAL_TEMPLATES = [
+  // a!  (bare)
+  function(a,fa){ return { text:`${a}!`, answer:fa }; },
+  // a! ± b
+  function(a,fa){
+    const b=d(); const op=Math.random()<0.5?'+':'−';
+    if(op==='−' && fa<b) return FACTORIAL_TEMPLATES[1](a,fa);
+    return { text:`${a}! ${op} ${b}`, answer: op==='+'?fa+b:fa-b };
+  },
+  // a! + b × c — order of operations, multiply first
+  function(a,fa){
+    const b=d(), c=d();
+    return { text:`${a}! + ${b} × ${c}`, answer:fa+b*c };
+  },
+  // a! − b × c — order of operations, multiply first
+  function(a,fa){
+    const b=d(), c=d();
+    return { text:`${a}! − ${b} × ${c}`, answer:fa-b*c };
+  },
+  // b × a!  (multiply the factorial itself by a small digit)
+  function(a,fa){
+    const b=randInt(2,4);
+    return { text:`${b} × ${a}!`, answer:b*fa };
+  },
+  // a! ÷ b — exact division of the factorial by one of its single-digit divisors
+  function(a,fa){
+    const divs=factorialDivisors(fa);
+    if(divs.length===0) return FACTORIAL_TEMPLATES[1](a,fa); // fallback, shouldn't happen for a>=2
+    const b=divs[randInt(0,divs.length-1)];
+    return { text:`${a}! ÷ ${b}`, answer:fa/b };
+  },
+  // a! − b!  (difference of two factorials, smaller argument second)
+  function(a,fa){
+    const b=randInt(2,Math.max(2,a-1));
+    if(b>=a) return FACTORIAL_TEMPLATES[1](a,fa); // a was already 2, can't go lower — fallback
+    return { text:`${a}! − ${b}!`, answer:fa-fact(b) };
+  },
+];
+
+function genEquationFactorial(){
+  const a=randInt(2,5); // 2..5 → up to 5!=120, still computable by hand rather than memorized
+  const fa=fact(a);
+  const template = FACTORIAL_TEMPLATES[randInt(0,FACTORIAL_TEMPLATES.length-1)];
+  return template(a,fa);
+}
+
+function genClassicQuestion(round,total,simpleMap){
+  const progress = (round-1)/Math.max(1,total);
+  const simpleType = simpleMap && simpleMap[round]; // 'add' | 'sub' | undefined
+  const isFactorialRound = !simpleType && round>2 && Math.random()<0.3; // ~3 in 10 classic rounds
+
+  const eq = simpleType==='add' ? genSimpleAdd()
+    : simpleType==='sub' ? genSimpleSub()
+    : isFactorialRound ? genEquationFactorial()
+    : genEquationComplex(progress);
+
+  // Build plausible distractors around the true answer, then shuffle.
+  // Spread scales with the answer's own magnitude so distractors stay
+  // believable whether the answer is 6 or 720.
+  const answer = eq.answer;
+  const spread = Math.max(4, Math.round(Math.abs(answer)*0.3));
+  const seen = new Set([answer]);
+  const distractors = [];
+  const candidates = [answer+1, answer-1, answer+2, answer-2]; // common off-by-N errors first
+  candidates.forEach(v=>{ if(!seen.has(v)){ seen.add(v); distractors.push(v); } });
+  while(distractors.length < NUM_CHOICES-1){
+    const delta = randInt(1,spread) * (Math.random()<0.5?-1:1);
+    const v = answer+delta;
+    if(!seen.has(v)){ seen.add(v); distractors.push(v); }
+  }
+  const choices = [answer, ...distractors.slice(0,NUM_CHOICES-1)].map(String);
+
+  return {
+    symbol: eq.text,
+    question: 'SOLVE',
+    hint: '',
+    answer: String(answer),
+    choices,
+    resultText: eq.text+' = '+answer
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// PERCENTAGES + ALGEBRA  (~70% of every match; the rest is the classic pool above)
+// ═══════════════════════════════════════════════════════
+// Every question here has an INTEGER answer, and its four choices are built
+// to be "close together" so that only actually solving it gives confidence:
+//   - all choices sit inside a narrow window around the true answer
+//   - wrong choices are seeded from REAL slips (sign errors, forgetting a
+//     step, 1%/5%/10% off, "+20% then −20% = back to start", etc.) whenever
+//     those slips land inside the window
+//   - the true answer's rank among the four is random, so "pick the middle
+//     one" doesn't work
+//   - parity, "ends in 0/5", sign and digit-count are never a giveaway: at
+//     least one wrong choice always shares each of those with the answer
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+function pick(arr){ return arr[randInt(0,arr.length-1)]; }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=randInt(0,i); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+function fmtN(n){ return n<0 ? '−'+(-n) : String(n); }       // proper minus sign, matches the equations
+function randNZ(lo,hi){ let v=0; while(v===0) v=randInt(lo,hi); return v; }
+
+// Difficulty tier 0-3. Normal lives in tiers 0-2 and ramps with the match;
+// Complex and Blackout live in tiers 2-3 (awkward percentages, tougher algebra).
+function pickTier(mode,progress){
+  if(mode==='normal') return clamp(Math.round(progress*2 + (Math.random()-0.5)), 0, 2);
+  return clamp(Math.round(2 + progress + (Math.random()-0.5)*0.8), 2, 3);
+}
+
+// Build 4 integer choices (1 answer + 3 wrong) packed tightly around `answer`.
+// errs = candidate "typical mistake" values; W = half-width of the window.
+function buildCloseChoices(answer, errs, W, minVal){
+  const need = NUM_CHOICES-1;
+  const lo = (minVal==null) ? -Infinity : minVal;
+  const feat = v => [v%2===0, v%5===0, v<0, String(Math.abs(v)).length];
+  const fa = feat(answer);
+  const noGiveaway = ds => fa.every((f,i)=>ds.some(v=>feat(v)[i]===f));
+  const take = (S,All,n)=>{
+    const out=S.slice(0,n);
+    for(const v of shuffle(All.filter(v=>!out.includes(v)))){ if(out.length>=n) break; out.push(v); }
+    return out;
+  };
+  let best=null;
+  for(let widen=0; widen<=6 && !(best&&best.good); widen+=2){
+    const w=W+widen;
+    const near = v => Number.isInteger(v) && v!==answer && v>=lo && Math.abs(v-answer)<=Math.ceil(w*1.5);
+    const S=[...new Set((errs||[]).filter(near))];
+    const lowAll=[], upAll=[];
+    for(let k=1;k<=w;k++){ if(near(answer-k)) lowAll.push(answer-k); if(near(answer+k)) upAll.push(answer+k); }
+    for(let attempt=0; attempt<40; attempt++){
+      const r=randInt(0,need);                 // how many wrong choices sit BELOW the answer
+      let nLow=Math.min(r,lowAll.length), nUp=Math.min(need-r,upAll.length);
+      while(nLow+nUp<need){ if(lowAll.length>nLow) nLow++; else if(upAll.length>nUp) nUp++; else break; }
+      const ds=[
+        ...take(shuffle(S.filter(v=>v<answer)),lowAll,nLow),
+        ...take(shuffle(S.filter(v=>v>answer)),upAll,nUp)
+      ];
+      if(ds.length<need) continue;
+      const good=noGiveaway(ds);
+      if(!best || (good && !best.good)) best={ds,good};
+      if(good) break;
+    }
+  }
+  const ds = best ? best.ds.slice() : [];
+  for(let k=1; ds.length<need; k++){
+    for(const v of [answer-k,answer+k]){
+      if(ds.length<need && v!==answer && v>=lo && !ds.includes(v)) ds.push(v);
+    }
+  }
+  return shuffle([answer,...ds].map(fmtN));
+}
+
+function finishQuestion(q, W, minVal){
+  return {
+    symbol: q.text,
+    question: q.label,
+    hint: q.hint || '',
+    answer: fmtN(q.ans),
+    choices: buildCloseChoices(q.ans, q.errs, W, minVal),
+    resultText: q.resultText || (q.text+' = '+fmtN(q.ans)),
+    kind: q.kind, tier: q.tier,
+    cpu: q.cpu
+  };
+}
+
+// ── PERCENTAGES ──────────────────────────────────────
+const PCT_EASY=[10,20,25,50,75];
+const PCT_MID=[5,15,30,40,60,35,45,80,90];
+const PCT_ODD=[11,12,13,14,16,17,18,19,21,22,23,24,26,27,28,29,32,33,36,37,38,43,47,53,57,63,67,73,87];
+function pickP(tier){
+  if(tier===0) return pick(PCT_EASY);
+  if(tier===1) return pick(PCT_EASY.concat(PCT_MID));
+  if(tier===2) return Math.random()<0.65 ? pick(PCT_ODD) : pick(PCT_MID);
+  return Math.random()<0.85 ? pick(PCT_ODD) : pick(PCT_MID);
+}
+// A base n such that p% of n is a whole number. `fine` keeps n a multiple of 10 (friendlier).
+function pctBase(p,minN,maxN,fine){
+  let step=100/gcd(p,100);
+  if(fine) step=lcm(step,10);
+  const kMin=Math.max(1,Math.ceil(minN/step));
+  const kMax=Math.max(kMin,Math.floor(maxN/step));
+  return step*randInt(kMin,kMax);
+}
+// Typical slips on "p% of n": being off by 1%, 2%, 5% or 10% of n.
+function pctErrs(n,ans){
+  const out=[];
+  [1,2,5,10].forEach(k=>{ if((k*n)%100===0){ out.push(ans+k*n/100, ans-k*n/100); } });
+  return out;
+}
+function pctW(ans,tier){ return tier>=2 ? clamp(Math.round(ans*0.08),3,12) : clamp(Math.round(ans*0.14),4,16); }
+// Reasoned estimate (NOT measured data) for the CPU opponent: easy benchmark
+// percents (10/25/50) are retrieved almost as facts; awkward ones need a real
+// multi-step computation, and chained percentages cost extra serial steps.
+function pctCpu(tier,kind){
+  const T=[2600,4200,6800,9500][tier], A=[0.94,0.88,0.78,0.68][tier];
+  const extra={of:[0,0],sale:[600,0.01],boost:[600,0.01],base:[1500,0.04],combo:[3000,0.06],diff:[3200,0.07],updown:[2500,0.08],origprice:[1800,0.05]}[kind]||[0,0];
+  return { timeMs:T+extra[0], accuracy:A-extra[1] };
+}
+
+function genPercentQuestion(mode,progress){
+  const tier=pickTier(mode,progress);
+  const kinds = tier===0 ? ['of']
+    : tier===1 ? ['of','of','sale','boost','base']
+    : tier===2 ? ['of','of','sale','boost','base','combo']
+    : ['of','sale','boost','base','combo','diff','updown','origprice'];
+  const kind=pick(kinds);
+  const fine=tier<2, maxN=[400,600,500,900][tier], minN=fine?40:100;
+  let text,label,hint='',ans,errs=[],resultText;
+
+  if(kind==='of'){
+    const p=pickP(tier), n=pctBase(p,minN,maxN,fine);
+    ans=p*n/100; text=`${p}% of ${n}`; label='🎯 PERCENT OF';
+    errs=pctErrs(n,ans);
+
+  } else if(kind==='sale' || kind==='boost'){
+    const p=pickP(tier), n=pctBase(p,minN,maxN,fine), cut=p*n/100;
+    const up = kind==='boost';
+    ans = up ? n+cut : n-cut;
+    text=`${n} ${up?'+':'−'} ${p}%`;
+    label = up ? '📈 AFTER THE RAISE' : '🏷️ SALE PRICE';
+    hint  = up ? 'the new total' : 'what you actually pay';
+    errs=[...pctErrs(n,ans), cut, up ? n-cut : n+cut];
+
+  } else if(kind==='base'){
+    const p=pickP(tier), n=pctBase(p,minN,maxN,fine), r=p*n/100, step=100/gcd(p,100);
+    ans=n; text=`${p}% of ? = ${r}`; label='🔍 FIND THE BASE'; hint='what is it a % of?';
+    resultText=`? = ${n}`;
+    errs=[n+step,n-step,n+10,n-10,Math.round(100*r/(p+1)), p>1?Math.round(100*r/(p-1)):n+5];
+
+  } else if(kind==='combo' || kind==='diff'){
+    const minus = kind==='diff';
+    let p,q,a,b,va,vb,tries=0;
+    do{
+      p=pickP(tier); q=pickP(tier>=3?2:1);
+      a=pctBase(p,100,Math.min(maxN,400),false); b=pctBase(q,100,Math.min(maxN,400),false);
+      va=p*a/100; vb=q*b/100; tries++;
+    } while(minus && va<=vb && tries<40);
+    if(minus && va<=vb){ [p,q]=[q,p]; [a,b]=[b,a]; [va,vb]=[vb,va]; }
+    ans = minus ? va-vb : va+vb;
+    text=`${p}%×${a} ${minus?'−':'+'} ${q}%×${b}`;
+    label = minus ? '⚖️ THE GAP' : '🧮 ADD THEM UP';
+    errs=[...pctErrs(a,ans), ...pctErrs(b,ans)];
+
+  } else if(kind==='updown'){
+    // n ±p% ±q%  — each step must stay a whole number
+    let n,p,q,s1,s2,v1,v2,ok=false;
+    for(let i=0;i<300 && !ok;i++){
+      n=100*randInt(1,9); p=pick([10,15,20,25,30,40,50,12,16,24,36,60]); q=pick([10,15,20,25,30,40,50,12,16,24,36,60]);
+      s1=Math.random()<0.5?1:-1; s2=Math.random()<0.5?1:-1;
+      v1=n*(100+s1*p)/100;
+      if((v1*q)%100!==0) continue;
+      v2=v1*(100+s2*q)/100;
+      ok = Number.isInteger(v2) && v2>0;
+    }
+    if(!ok){ n=200;p=20;q=20;s1=1;s2=-1;v1=240;v2=192; }
+    ans=v2;
+    text=`${n} ${s1>0?'+':'−'} ${p}% ${s2>0?'+':'−'} ${q}%`;
+    label='🎢 UP THEN DOWN'; hint='the 2nd % hits the NEW amount';
+    const net=n*(100+s1*p+s2*q)/100;
+    errs=[n, net, v1+s2*n*q/100];
+
+  } else { // origprice: "? − p% = r"
+    const p=pick([10,15,20,25,30,35,40,12,16,24,36,45]), k=100-p;
+    const n=pctBase(k,100,maxN,false), r=k*n/100, step=100/gcd(k,100);
+    ans=n; text=`? − ${p}% = ${r}`; label='🏷️ ORIGINAL PRICE'; hint='the price before the discount';
+    resultText=`? = ${n}`;
+    errs=[Math.round(r*(100+p)/100), n+step, n-step, n+10, n-10];
+  }
+  return finishQuestion({text,label,hint,ans,errs,kind,tier,resultText,cpu:pctCpu(tier,kind)}, pctW(ans,tier), 1);
+}
+
+// ── ALGEBRA ──────────────────────────────────────────
+function xTerm(a){ return a===1 ? 'x' : a===-1 ? '−x' : fmtN(a)+'x'; }
+function lin(a,b){ let s=xTerm(a); if(b>0) s+=' + '+b; else if(b<0) s+=' − '+(-b); return s; }
+function pickX(tier,allowNeg){
+  if(!allowNeg || tier<2) return tier===0 ? randInt(2,9) : randInt(2,12);
+  return tier===2 ? randNZ(-8,12) : randNZ(-10,15);
+}
+function algCpu(tier,kind){
+  const T=[3600,5200,7800,11000][tier], A=[0.92,0.88,0.78,0.66][tier];
+  if(['sys','sys2','dist','cubic','frac','twovar'].includes(kind)) return { timeMs:T+1500, accuracy:A-0.04 };
+  if(['plug','plug2'].includes(kind)) return { timeMs:T-800, accuracy:A+0.02 };
+  return { timeMs:T, accuracy:A };
+}
+
+function genAlgebraQuestion(mode,progress){
+  const tier=pickTier(mode,progress);
+  const allowNeg = mode!=='normal' && tier>=2;
+  const KINDS=[
+    ['lin+','plug'],
+    ['lin+','lin-','div','paren','plug2'],
+    ['both','paren','quad','prod','sys','twovar','div'],
+    ['both','dist','cubic','frac','sys2','quad','prod','twovar']
+  ];
+  const kind=pick(KINDS[tier]);
+  let x=pickX(tier,allowNeg);
+  let text,label='🔢 FIND x',hint='',ans=x,errs=[],resultText,solve=true;
+  const near=[x+1,x-1,x+2,x-2];
+
+  switch(kind){
+    case 'lin+': { // ax + b = c
+      const a=randInt(2,6), b=randInt(1,15), c=a*x+b;
+      text=`${a}x + ${b} = ${c}`;
+      errs=[...near, Math.round((c+b)/a), c-b, Math.round(c/a)];
+      break; }
+    case 'lin-': { // ax − b = c
+      const a=randInt(2,6), b=randInt(1,Math.min(15,a*x-1)), c=a*x-b;
+      text=`${a}x − ${b} = ${c}`;
+      errs=[...near, Math.round((c-b)/a), c+b, Math.round(c/a)];
+      break; }
+    case 'div': { // x ÷ a + b = c
+      const a=randInt(2,5), k=randInt(2,9)*(allowNeg&&Math.random()<0.4?-1:1), b=randInt(1,12), c=k+b;
+      x=a*k; ans=x;
+      text=`x ÷ ${a} + ${b} = ${fmtN(c)}`;
+      errs=[x+a,x-a,(c+b)*a,c*a-b,c*a+b,x+1,x-1];
+      break; }
+    case 'paren': { // a(x ± b) = c
+      const a=randInt(2,6);
+      const bb = allowNeg ? randNZ(-9,9) : randNZ(-Math.min(8,x-1),9);
+      const c=a*(x+bb);
+      text=`${a}(${lin(1,bb)}) = ${fmtN(c)}`;
+      errs=[c/a+bb, Math.round((c-bb)/a), c/a, ...near];
+      break; }
+    case 'plug': { // x = 4: 3x + 2
+      const a=randInt(2,6), b=randInt(1,9); let s=Math.random()<0.5?1:-1;
+      if(a*x+s*b<1) s=1;
+      ans=a*x+s*b; solve=false; label='🔌 PLUG IN';
+      text=`x = ${x}: ${a}x ${s>0?'+':'−'} ${b}`;
+      errs=[a+x+s*b, a*x-s*b, Number(`${a}${x}`)+s*b, a*(x+s*b), ans+1, ans-1];
+      break; }
+    case 'plug2': { // x = 6: x² − 5
+      let s=Math.random()<0.5?1:-1; const b=randInt(1,Math.min(15,x*x-1));
+      if(x*x+s*b<1) s=1;
+      ans=x*x+s*b; solve=false; label='🔌 PLUG IN';
+      text=`x = ${x}: x² ${s>0?'+':'−'} ${b}`;
+      errs=[2*x+s*b, x*x-s*b, ans+x, ans-x, ans+1, ans-1];
+      break; }
+    case 'both': { // ax + b = cx + d
+      const a=randInt(3,9), c=randInt(1,a-1);
+      const b = allowNeg ? randNZ(-9,12) : randInt(1,12);
+      const d=(a-c)*x+b;
+      text=`${lin(a,b)} = ${lin(c,d)}`;
+      errs=[...near, Math.round((d+b)/(a-c)), Math.round((d-b)/(a+c)), -x, Math.round((d-b)/a)];
+      break; }
+    case 'quad': { // x = −4: 2x² + 3x − 5
+      const a=pick([1,2,3]), b=randNZ(-6,6), c=randNZ(-9,9);
+      x = allowNeg ? randNZ(-6,7) : randInt(2,7);
+      ans=a*x*x+b*x+c; solve=false; label='🔌 PLUG IN';
+      const poly=`${a===1?'':a}x²${b>0?' + ':' − '}${Math.abs(b)===1?'':Math.abs(b)}x${c>0?' + '+c:' − '+(-c)}`;
+      text=`x = ${fmtN(x)}: ${poly}`;
+      errs=[a*x*x-b*x+c, -a*x*x+b*x+c, a*x*x+b*x-c, ans+a, ans-a, ans+Math.abs(b), ans-Math.abs(b)];
+      break; }
+    case 'prod': { // x = 8: (x+3)(x−3)
+      const a=randInt(2,7), b=randInt(2,7);
+      x = allowNeg ? randNZ(-8,10) : randInt(3,10);
+      ans=(x+a)*(x-b); solve=false; label='🔌 PLUG IN';
+      text=`x = ${fmtN(x)}: (x+${a})(x−${b})`;
+      errs=[x*x-a*b, x*x+(a+b)*x-a*b, (x+a)*(x+b), x*x+(a-b)*x+a*b, ans+a, ans-b];
+      break; }
+    case 'sys': { // x+y=s | x−y=d
+      const y=randInt(1,9), s=x+y, dd=x-y;
+      label='🧩 TWO CLUES · FIND x';
+      text=`x+y=${fmtN(s)} | x−y=${fmtN(dd)}`;
+      errs=[y, Math.round(s/2), Math.round(dd/2), ...near];
+      break; }
+    case 'twovar': { // ax + by = c, y = k
+      const a=randInt(2,5), b=randInt(2,6), k=randInt(2,7), c=a*x+b*k;
+      text=`${a}x + ${b}y = ${fmtN(c)}, y = ${k}`;
+      errs=[Math.round((c+b*k)/a), Math.round(c/a), Math.round((c-b)/a), ...near];
+      break; }
+    case 'dist': { // a(bx + c) = dx + e
+      const a=randInt(2,4), b=randInt(2,3), c=randNZ(-9,9);
+      let d=randInt(1,9); if(d===a*b) d=a*b+1;
+      const m=a*b-d, e=m*x+a*c;
+      text=`${a}(${lin(b,c)}) = ${lin(d,e)}`;
+      errs=[Math.round(e/m), Math.round((e+a*c)/m), Math.round((e-a*c)/(a*b+d)), Math.round((e-c)/m), -x, ...near];
+      break; }
+    case 'cubic': { // x = −3: x³ + 2x²
+      x=randNZ(-4,4); solve=false; label='🔌 PLUG IN';
+      if(Math.random()<0.5){
+        const a=randInt(1,4);
+        ans=x**3+a*x*x;
+        text=`x = ${fmtN(x)}: x³ + ${a===1?'':a}x²`;
+        errs=[Math.abs(x)**3+a*x*x, x**3-a*x*x, ans+a, ans-a, ans+x, ans-x];
+      } else {
+        const b=randInt(2,6);
+        ans=x**3-b*x;
+        text=`x = ${fmtN(x)}: x³ − ${b}x`;
+        errs=[x**3+b*x, Math.abs(x)**3-b*x, ans+b, ans-b, ans+x, ans-x];
+      }
+      break; }
+    case 'frac': { // (x ± a) ÷ b = c
+      const a=randNZ(-9,9), b=randInt(2,6), c=randNZ(-6,8);
+      x=b*c-a; ans=x;
+      text=`(x ${a>=0?'+':'−'} ${Math.abs(a)}) ÷ ${b} = ${fmtN(c)}`;
+      errs=[b*c+a, c-a, b*c, (c-a)*b, x+b, x-b, -x];
+      break; }
+    default: { // 'sys2': ax+y=s | x−y=d
+      const a=randInt(2,4), y=randInt(1,9), s=a*x+y, dd=x-y;
+      label='🧩 TWO CLUES · FIND x';
+      text=`${a}x+y=${fmtN(s)} | x−y=${fmtN(dd)}`;
+      errs=[y, Math.round(s/(a+1)), Math.round(dd/2), ...near];
+    }
+  }
+  if(solve) resultText=`x = ${fmtN(ans)}`;
+  else resultText=`${text} = ${fmtN(ans)}`;
+  const W = solve ? clamp(Math.round(Math.abs(ans)*0.1),3,8)
+                  : clamp(Math.round(Math.abs(ans)*(tier>=2?0.12:0.18)),3,12);
+  const minVal = (allowNeg || ans<=0) ? null : 1;
+  return finishQuestion({text,label,hint,ans,errs,kind,tier,resultText,cpu:algCpu(tier,kind)}, W, minVal);
+}
+
+// ── ROUND PLAN ───────────────────────────────────────
+// Decides, once per match, what KIND of question each round is:
+//   ~70% new types (percentages and algebra, shuffled and evenly split)
+//   ~30% classic (the original arithmetic/factorial pool, incl. Normal's
+//        two warm-up rounds, which count toward that 30%)
+function buildPlan(total,simpleMap){
+  const plan=new Array(total+1).fill('classic');
+  const free=[];
+  for(let r=1;r<=total;r++){ if(!(simpleMap && simpleMap[r])) free.push(r); }
+  const simpleCount = simpleMap ? Object.keys(simpleMap).length : 0;
+  const extraClassic = Math.max(0, Math.round(total*0.3)-simpleCount);
+  shuffle(free);
+  const rest=free.slice(extraClassic);
+  let t = Math.random()<0.5 ? 'percent' : 'algebra';
+  rest.forEach(r=>{ plan[r]=t; t = t==='percent' ? 'algebra' : 'percent'; });
+  return plan;
+}
+
+function generateEquation(round,total,simpleMap,plan,mode){
+  const progress=(round-1)/Math.max(1,total);
+  const slot = plan ? plan[round] : 'classic';
+  if(slot==='percent') return genPercentQuestion(mode,progress);
+  if(slot==='algebra') return genAlgebraQuestion(mode,progress);
+  return genClassicQuestion(round,total,simpleMap);
+}
+
+// Randomly assign the two "simple" rounds (one add, one sub) to two
+// distinct round numbers within the first half of the match, in random
+// order — so it's never predictable which round is which.
+function buildSimpleMap(total){
+  const pos1 = randInt(1, Math.max(1,Math.floor(total*0.5)));
+  let pos2 = randInt(1, Math.max(1,Math.floor(total*0.5)));
+  while(pos2===pos1 && total>1) pos2 = randInt(1, Math.max(1,Math.floor(total*0.5)));
+  const map = {};
+  if(Math.random()<0.5){ map[pos1]='add'; map[pos2]='sub'; }
+  else { map[pos1]='sub'; map[pos2]='add'; }
+  return map;
+}
+
+// ── STATE ────────────────────────────────────────────
+let G = {};
+
+function freshState(p1,p2,total,mode,vsCPU,cpuDifficulty){
+  const simpleMap = mode==='normal' ? buildSimpleMap(total) : null;
+  return {
+    p1, p2, total, mode,
+    vsCPU: !!vsCPU, cpuDifficulty: cpuDifficulty||'average',
+    cpuTimer: null,          // pending "thinking" timeout for the CPU's next move
+    round: 0,
+    // Only Normal mode gets 2 randomized warm-up rounds; Complex and
+    // Blackout both skip straight to the complex/factorial pool every round.
+    simpleMap,
+    plan: buildPlan(total, simpleMap),   // per-round question kind: 'percent' | 'algebra' | 'classic'
+    roundOver: false,        // true once someone has answered correctly this round
+    frozenUntil1: 0, frozenUntil2: 0,   // performance.now() timestamp when freeze ends
+    wrongTotal1: 0, wrongTotal2: 0,     // cumulative wrong answers across the WHOLE match
+    correct1: 0, correct2: 0,           // correct-answer counts — this decides the winner
+    times1: [], times2: [],             // reaction times (ms) for correct answers only — shown at the end
+    streakDots: [],                     // per-round point winner, for the streak row
+    roundActive: false,
+    roundStart: 0,
+    stimulus: null,
+    freezeIv1: null, freezeIv2: null,   // countdown-display intervals
+    // Blackout mode only:
+    isBlackoutRound: false,             // true if THIS round does the flash-then-hide cycle
+    stimPhase: 'visible',               // 'visible' | 'hidden' — only meaningful when isBlackoutRound
+    blackoutHideTimer: null, blackoutRevealTimer: null,
+    solvedFromMemory: false,            // true if the winning tap landed while hidden — for the round-result badge
+    roundWrong1: 0, roundWrong2: 0,     // wrong answers THIS ROUND per player — drives digit-masking count
+    roundGuesses1: 0, roundGuesses2: 0, // wrong answers this round — 2nd one locks you out
+    lockedOut1: false, lockedOut2: false,
+    maskRevertTimer1: null, maskRevertTimer2: null,  // reverts the mask back to real digits when the freeze thaws
+  };
+}
+
+// ── SCREENS ──────────────────────────────────────────
+const SCR = {title:'titleScreen',countdown:'countdownScreen',game:'gameScreen',result:'roundResult',final:'finalScreen'};
+function show(name){ Object.values(SCR).forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==SCR[name])); }
+
+// ── localStorage NAME PERSISTENCE ───────────────────
+function loadNames(){
+  const n1=localStorage.getItem('calcduel_name1')||'';
+  const n2=localStorage.getItem('calcduel_name2')||'';
+  document.getElementById('name1').value=n1;
+  document.getElementById('name2').value=n2;
+}
+function saveNames(){
+  localStorage.setItem('calcduel_name1',document.getElementById('name1').value.trim());
+  localStorage.setItem('calcduel_name2',document.getElementById('name2').value.trim());
+}
+loadNames();
+
+// ── DARK MODE ────────────────────────────────────────
+const darkToggle=document.getElementById('darkToggle');
+function applyDark(on){
+  document.body.classList.toggle('dark',on);
+  darkToggle.textContent=on?'☀️':'🌙';
+  localStorage.setItem('calcduel_dark',on?'1':'0');
+}
+applyDark(localStorage.getItem('calcduel_dark')==='1');
+darkToggle.addEventListener('click',()=>applyDark(!document.body.classList.contains('dark')));
+
+// ── ABOUT MODAL ──────────────────────────────────────
+const aboutModal=document.getElementById('aboutModal');
+document.getElementById('aboutBtn').addEventListener('click',()=>aboutModal.classList.add('open'));
+document.getElementById('modalClose').addEventListener('click',()=>aboutModal.classList.remove('open'));
+aboutModal.addEventListener('click',e=>{ if(e.target===aboutModal) aboutModal.classList.remove('open'); });
+
+// ── MODE SELECTOR ────────────────────────────────────
+let mode='normal';
+const modeNormalBtn=document.getElementById('modeNormalBtn');
+const modeComplexBtn=document.getElementById('modeComplexBtn');
+const modeBlackoutBtn=document.getElementById('modeBlackoutBtn');
+const modeDesc=document.getElementById('modeDesc');
+const MODE_DESCRIPTIONS={
+  normal:'Friendly percentages and algebra mixed with classic arithmetic. Starts gentle, ramps up as you go.',
+  complex:'Awkward percentages (17%, 29%…), tougher algebra and multi-step math. The four answers are nearly identical.',
+  blackout:'Complex-level questions that briefly vanish mid-round — solve from memory. A wrong guess also blanks out one or two digits, so you have to recall what you saw.'
+};
+function setMode(m){
+  mode=m;
+  modeNormalBtn.classList.toggle('active',m==='normal');
+  modeComplexBtn.classList.toggle('active',m==='complex');
+  modeBlackoutBtn.classList.toggle('active',m==='blackout');
+  modeDesc.textContent=MODE_DESCRIPTIONS[m];
+}
+modeNormalBtn.addEventListener('click',()=>setMode('normal'));
+modeComplexBtn.addEventListener('click',()=>setMode('complex'));
+modeBlackoutBtn.addEventListener('click',()=>setMode('blackout'));
+
+// ── OPPONENT SELECTOR — Friend vs CPU ─────────────────
+let opponent='friend';
+let cpuDifficulty='average';
+const oppFriendBtn=document.getElementById('oppFriendBtn');
+const oppCpuBtn=document.getElementById('oppCpuBtn');
+const cpuDiffCtrl=document.getElementById('cpuDiffCtrl');
+const cpuDiffDesc=document.getElementById('cpuDiffDesc');
+const name2Input=document.getElementById('name2');
+const name2Wrap=document.getElementById('name2Wrap');
+const diffBtns={ below:document.getElementById('diffEasyBtn'), average:document.getElementById('diffMediumBtn'), above:document.getElementById('diffHardBtn'), elite:document.getElementById('diffEliteBtn') };
+const CPU_LABEL={ below:'🤖 CPU (Below Avg)', average:'🤖 CPU (Average)', above:'🤖 CPU (Above Avg)', elite:'🤖 CPU (Elite)' };
+const CPU_DIFF_DESC={
+  below:'Slower to answer and more error-prone than a typical player.',
+  average:"My best estimate of a typical player's speed and accuracy on this game, reasoned from arithmetic-cognition research — not measured data.",
+  above:'Faster and considerably more accurate than a typical player.',
+  elite:"My estimate of roughly 99th-percentile performance on this game — very fast, rarely wrong. Same reasoning as Average, pushed to a plausible human ceiling — still not measured data."
+};
+
+function setOpponent(o){
+  opponent=o;
+  oppFriendBtn.classList.toggle('active',o==='friend');
+  oppCpuBtn.classList.toggle('active',o==='cpu');
+  cpuDiffCtrl.classList.toggle('show',o==='cpu');
+  cpuDiffDesc.classList.toggle('show',o==='cpu');
+  name2Wrap.classList.toggle('cpu-locked',o==='cpu');
+  name2Input.disabled = (o==='cpu');
+  name2Input.placeholder = o==='cpu' ? CPU_LABEL[cpuDifficulty] : 'Red Player';
+  if(o==='cpu') name2Input.value='';
+}
+function setCpuDifficulty(d){
+  cpuDifficulty=d;
+  Object.entries(diffBtns).forEach(([k,btn])=>btn.classList.toggle('active',k===d));
+  cpuDiffDesc.textContent=CPU_DIFF_DESC[d];
+  if(opponent==='cpu') name2Input.placeholder=CPU_LABEL[d];
+}
+oppFriendBtn.addEventListener('click',()=>setOpponent('friend'));
+oppCpuBtn.addEventListener('click',()=>setOpponent('cpu'));
+diffBtns.below.addEventListener('click',()=>setCpuDifficulty('below'));
+diffBtns.average.addEventListener('click',()=>setCpuDifficulty('average'));
+diffBtns.above.addEventListener('click',()=>setCpuDifficulty('above'));
+diffBtns.elite.addEventListener('click',()=>setCpuDifficulty('elite'));
+
+
+// ── ROUNDS COUNTER ───────────────────────────────────
+let rounds=10;
+document.getElementById('rMinus').addEventListener('click',()=>{ if(rounds>3){rounds--;document.getElementById('rVal').textContent=rounds;} });
+document.getElementById('rPlus').addEventListener('click',()=>{ if(rounds<30){rounds++;document.getElementById('rVal').textContent=rounds;} });
+
+// ── START ────────────────────────────────────────────
+document.getElementById('startBtn').addEventListener('click',()=>{
+  saveNames();
+  const humanName=document.getElementById('name1').value.trim()||'Blue Player';
+  const isCPU = opponent==='cpu';
+  let n1, n2;
+  if(isCPU){
+    n1 = CPU_LABEL[cpuDifficulty]; // CPU always ends up as P1 — the rotated/far half, fine since nobody needs to read it upright
+    n2 = humanName;                 // the solo human always ends up as P2 — the near/normal half, readable without flipping the phone
+  } else {
+    n1 = humanName;
+    n2 = document.getElementById('name2').value.trim()||'Red Player';
+  }
+  G=freshState(n1,n2,rounds,mode,isCPU,cpuDifficulty);
+  countdown(()=>nextRound());
+});
+
+// ── COUNTDOWN ────────────────────────────────────────
+function countdown(cb){
+  show('countdown');
+  let n=3;
+  function set(val,go){
+    ['cdN1','cdN2'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.textContent=val; el.className='cd-num'+(go?' go':'');
+      el.style.animation='none'; void el.offsetWidth;
+      el.style.animation='popIn .32s cubic-bezier(.34,1.56,.64,1)';
+    });
+  }
+  set(n);
+  const iv=setInterval(()=>{
+    n--;
+    if(n===0){ set('GO!',true); clearInterval(iv); setTimeout(cb,580); }
+    else set(n);
+  },750);
+}
+
+// ── NEXT ROUND ───────────────────────────────────────
+function nextRound(){
+  G.round++;
+  G.roundOver=false;
+  G.roundActive=false;
+
+  // Freeze is scoped to the round it happened in — clear any leftover
+  // freeze from the previous round so it never carries over.
+  G.frozenUntil1=0; G.frozenUntil2=0;
+  G.roundGuesses1=0; G.roundGuesses2=0; G.lockedOut1=false; G.lockedOut2=false;
+  refreshFreezeVisuals(1); refreshFreezeVisuals(2);
+
+  const txt=`ROUND ${G.round} / ${G.total}`;
+  document.getElementById('gRound1').textContent=txt;
+  document.getElementById('gRound2').textContent=txt;
+  document.getElementById('matchProgress').textContent=txt;
+  document.getElementById('gName1').textContent=G.p1;
+  document.getElementById('gName2').textContent=G.p2;
+  document.getElementById('modeBadge').classList.toggle('show',G.mode!=='normal');
+  document.getElementById('modeBadge').textContent = G.mode==='blackout' ? 'BLACKOUT MODE' : 'COMPLEX MODE';
+  updateScoreDisplay();
+  updateStreak();
+
+  // Reset point overlays
+  document.getElementById('done1').classList.remove('show');
+  document.getElementById('done2').classList.remove('show');
+
+  // Clear any blackout timers/state left over from a previous round
+  clearBlackoutTimers();
+  if(G.cpuTimer){ clearTimeout(G.cpuTimer); G.cpuTimer=null; }
+  document.getElementById('cpuThinking1').classList.remove('show');
+  if(G.maskRevertTimer1){ clearTimeout(G.maskRevertTimer1); G.maskRevertTimer1=null; }
+  if(G.maskRevertTimer2){ clearTimeout(G.maskRevertTimer2); G.maskRevertTimer2=null; }
+  G.solvedFromMemory=false;
+  G.roundWrong1=0; G.roundWrong2=0;
+  G.isBlackoutRound = G.mode==='blackout' && G.round%4===0 && G.round%6!==0;
+  G.stimPhase='visible';
+  setBlackoutVisual(false);
+
+  // Generate equation for this round
+  G.stimulus=generateEquation(G.round,G.total,G.simpleMap,G.plan,G.mode);
+  renderStimulus();
+  buildButtons(G.stimulus.choices);
+
+  if(G.isBlackoutRound) scheduleBlackoutCycle();
+
+  // First-ever round for this device: show an inline tap hint instead of
+  // requiring the About modal. Dismissed permanently after the first tap.
+  if (G.round===1 && localStorage.getItem('calcduel_seen_hint')!=='1'){
+    document.getElementById('hint1').classList.add('show');
+    document.getElementById('hint2').classList.add('show');
+  } else {
+    document.getElementById('hint1').classList.remove('show');
+    document.getElementById('hint2').classList.remove('show');
+  }
+
+  show('game');
+
+  setTimeout(()=>{
+    G.roundActive=true;
+    G.roundStart=performance.now();
+    if(G.vsCPU) scheduleCpuMove();
+  },300);
+}
+
+// Renders G.stimulus into both cards at the start of a round.
+function renderStimulus(){
+  [1,2].forEach(p=>{
+    const sym=document.getElementById('sSym'+p);
+    document.getElementById('sQ'+p).textContent=G.stimulus.question||'';
+    document.getElementById('sHint'+p).textContent=G.stimulus.hint||'';
+    sym.textContent=G.stimulus.symbol||'';
+    sym.style.fontSize='';
+  });
+  requestAnimationFrame(fitStimSymbols);
+}
+
+function setBlackoutVisual(hidden){
+  document.getElementById('stim1').classList.toggle('blackout-hidden',hidden);
+  document.getElementById('stim2').classList.toggle('blackout-hidden',hidden);
+}
+
+function clearBlackoutTimers(){
+  if(G.blackoutHideTimer){ clearTimeout(G.blackoutHideTimer); G.blackoutHideTimer=null; }
+  if(G.blackoutRevealTimer){ clearTimeout(G.blackoutRevealTimer); G.blackoutRevealTimer=null; }
+}
+
+// Show the equation for ~2.2s, then mask it for a random 2-4s while the
+// answer choices stay fully tappable underneath — the player has to solve
+// from memory during the hidden window. Reveals again afterward so it
+// stays forgiving rather than punishing.
+function scheduleBlackoutCycle(){
+  clearBlackoutTimers();
+  G.stimPhase='visible';
+  setBlackoutVisual(false);
+  G.blackoutHideTimer=setTimeout(()=>{
+    G.stimPhase='hidden';
+    setBlackoutVisual(true);
+    const hideMs = randInt(2000,4000);
+    G.blackoutRevealTimer=setTimeout(()=>{
+      G.stimPhase='visible';
+      setBlackoutVisual(false);
+    }, hideMs);
+  }, 2200);
+}
+
+// ── BUILD BUTTONS ─────────────────────────────────────
+function buildButtons(choices){
+  const sh=[...choices].sort(()=>Math.random()-.5);
+  [1,2].forEach(p=>{
+    const row=document.getElementById('btns'+p);
+    row.innerHTML='';
+    sh.forEach(ch=>{
+      const btn=document.createElement('button');
+      btn.className='ans-btn'; btn.textContent=ch;
+      btn.setAttribute('aria-label','Answer '+ch);
+      btn.addEventListener('pointerdown',e=>{ e.preventDefault(); tap(p,ch,btn); });
+      row.appendChild(btn);
+    });
+  });
+  // Auto-fit: shrink text until it clears the button on both axes, so a
+  // 4-choice row (e.g. Red/Blue/Green/Yellow) never overflows or clips.
+  requestAnimationFrame(fitAnswerButtons);
+}
+
+function fitStimSymbols(){
+  document.querySelectorAll('.stim-symbol').forEach(el=>{
+    let size=60;
+    el.style.fontSize=size+'px';
+    while(size>18 && el.scrollWidth>el.clientWidth-4){
+      size-=2;
+      el.style.fontSize=size+'px';
+    }
+  });
+}
+
+function fitAnswerButtons(){
+  document.querySelectorAll('.ans-btn').forEach(btn=>{
+    let size=20;
+    btn.style.fontSize=size+'px';
+    while(size>12 && (btn.scrollWidth>btn.clientWidth-8 || btn.scrollHeight>btn.clientHeight-8)){
+      size-=1;
+      btn.style.fontSize=size+'px';
+    }
+  });
+}
+
+// ── FREEZE HELPERS ────────────────────────────────────
+function isFrozen(player){
+  if(player===1 ? G.lockedOut1 : G.lockedOut2) return true;   // locked out for the rest of the round
+  const until = player===1 ? G.frozenUntil1 : G.frozenUntil2;
+  return performance.now() < until;
+}
+
+// Applies/removes the visual freeze state on a player's half and (re)starts
+// its own countdown display. Safe to call anytime, e.g. at the top of a
+// fresh round, to reflect a freeze that carried over from a previous round.
+// The player can still fully see and think about the problem while frozen —
+// only tapping is disabled.
+function refreshFreezeVisuals(player){
+  const iv = player===1 ? 'freezeIv1' : 'freezeIv2';
+  if(G[iv]){ clearInterval(G[iv]); G[iv]=null; }
+
+  const row=document.getElementById('btns'+player);
+  const wrap=row.closest('.answer-row-wrap');
+  const overlay=document.getElementById('freezeOv'+player);
+  const label=document.getElementById('freezeSec'+player);
+
+  const ic=overlay.querySelector('.freeze-ic'), lab=overlay.querySelector('.freeze-label');
+  const tick=()=>{
+    const locked = player===1 ? G.lockedOut1 : G.lockedOut2;
+    if(locked){
+      overlay.classList.add('show'); wrap.classList.add('frozen'); row.style.pointerEvents='none';
+      ic.textContent='🔒'; label.textContent='OUT'; lab.textContent='Locked out';
+      return;
+    }
+    ic.textContent='❄️'; lab.textContent='Frozen';
+    const until = player===1 ? G.frozenUntil1 : G.frozenUntil2;
+    const remain = until - performance.now();
+    if(remain<=0){
+      overlay.classList.remove('show');
+      wrap.classList.remove('frozen');
+      row.style.pointerEvents='';
+      clearInterval(G[iv]); G[iv]=null;
+      return;
+    }
+    overlay.classList.add('show');
+    wrap.classList.add('frozen');
+    row.style.pointerEvents='none';
+    label.textContent=(remain/1000).toFixed(1)+'s';
+  };
+  tick();
+  G[iv]=setInterval(tick,100);
+}
+
+// ── TAP ──────────────────────────────────────────────
+// ── DIGIT MASKING (Blackout mode) ─────────────────────
+// Replaces `count` random operand tokens (a digit, or a digit+"!") in an
+// equation's display text with "X" — operators are never touched, since
+// they're structural, not something the player needs to have memorized.
+function maskEquationText(text, count){
+  const MASK = /x/.test(text) ? '?' : 'X';   // algebra already uses lowercase x
+  const re=/\d+!?/g;
+  const tokens=[]; let m;
+  while((m=re.exec(text))){ tokens.push({start:m.index,end:m.index+m[0].length}); }
+  if(tokens.length===0) return text;
+  count=Math.min(count, tokens.length);
+  const idx=[...tokens.keys()];
+  for(let i=idx.length-1;i>0;i--){ const j=randInt(0,i); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  const chosen=new Set(idx.slice(0,count));
+  let out='', last=0;
+  tokens.forEach((t,i)=>{
+    out+=text.slice(last,t.start);
+    out+= chosen.has(i) ? MASK : text.slice(t.start,t.end);
+    last=t.end;
+  });
+  out+=text.slice(last);
+  return out;
+}
+
+// ── CPU OPPONENT ──────────────────────────────────────
+// The CPU is simulated purely as timing + an accuracy roll — it doesn't
+// "see" the masked/hidden display, it just knows the real answer and
+// decides whether to get it right. Rather than one flat accuracy/speed
+// number per difficulty, "Average" is built up PER QUESTION from the
+// equation's own structure, reasoned from well-established arithmetic-
+// cognition findings:
+//   - the "problem size effect": bigger/more operations = slower & less accurate
+//   - multiplication/division facts are retrieved more slowly and less
+//     reliably than addition/subtraction facts of the same digit size
+//   - each additional operation in a multi-step expression adds real
+//     serial "carry the intermediate result forward" processing time —
+//     it isn't done in parallel
+//   - un-parenthesized order-of-operations (e.g. "a + b × c") is a well
+//     known common error source for people who don't routinely apply
+//     precedence rules, on top of just being a longer expression
+//   - factorial is a less automatic/overlearned fact for most adults
+//     than basic arithmetic, so it's treated like a mid-cost retrieval
+// This is a reasoned estimate, not measured data — see the in-app note
+// next to the difficulty picker. Below/Above Average scale around it
+// rather than being independent guesses, so all three tiers stay
+// internally consistent with each other.
+function estimateHumanPerformance(symbol){
+  const opTokens = symbol.match(/[+−×÷]/g) || [];
+  const hasFactorial = /!/.test(symbol);
+  const hasParens = /\(/.test(symbol);
+  const hasMultDiv = /[×÷]/.test(symbol);
+  const hasAddSub = /[+−]/.test(symbol);
+  const needsOrderOfOps = hasMultDiv && hasAddSub && !hasParens; // e.g. "a + b × c"
+
+  let timeMs = 1000; // base: read the prompt, scan 4 choices, register a tap
+  let opCount = 0;
+  opTokens.forEach(op=>{
+    opCount++;
+    timeMs += (op==='×'||op==='÷') ? 1300 : 900; // mult/div facts retrieved more slowly
+  });
+  if(hasFactorial){ opCount++; timeMs += 1100; }
+  if(opCount>1) timeMs += (opCount-1)*1000; // serial cost of carrying an intermediate result forward
+  if(needsOrderOfOps) timeMs += 1200; // extra pause to work out precedence correctly
+
+  let accuracy = 0.95;
+  if(opCount>1) accuracy -= (opCount-1)*0.05;
+  if(hasMultDiv) accuracy -= 0.03;
+  if(needsOrderOfOps) accuracy -= 0.12; // precedence mistakes are a common real error source
+  if(hasFactorial) accuracy -= 0.05;
+  accuracy = Math.max(0.35, Math.min(0.97, accuracy));
+
+  return { timeMs, accuracy };
+}
+
+// Below/Average/Above/Elite all derive from the same per-question estimate
+// above — Below is slower with a scaled-up error rate, Above and Elite are
+// faster with the error rate cut down by different amounts, rather than
+// four disconnected flat numbers.
+const CPU_TIER_MODS = {
+  below:   { thinkMult:1.6,  accMult:0.75 },
+  average: { thinkMult:1.0,  accMult:1.0  },
+  above:   { thinkMult:0.6,  errMult:0.4  }, // cuts the error rate by 60% instead of scaling accuracy up
+  elite:   { thinkMult:0.35, errMult:0.12 }, // ~99th-percentile estimate: cuts the error rate by 88%, ~3x faster than Average — a plausible human ceiling, not near-instant/perfect
+};
+
+function computeCpuMove(){
+  const base = G.stimulus.cpu || estimateHumanPerformance(G.stimulus.symbol);
+  const tierMods = CPU_TIER_MODS[G.cpuDifficulty] || CPU_TIER_MODS.average;
+
+  let accuracy = tierMods.errMult!=null
+    ? 1-(1-base.accuracy)*tierMods.errMult
+    : base.accuracy*tierMods.accMult;
+
+  let thinkMs = base.timeMs * tierMods.thinkMult;
+
+  // Blackout mode's vanish-and-recall demand taxes the CPU a bit too.
+  if(G.mode==='blackout'){ accuracy -= 0.06; thinkMs *= 1.1; }
+
+  accuracy = Math.max(0.1, Math.min(0.98, accuracy));
+  // Small jitter so back-to-back rounds don't feel identical — this is NOT
+  // an attempt to model real human RT-distribution variance, just enough
+  // to avoid a robotic, perfectly repeating cadence.
+  thinkMs = Math.round(thinkMs * (0.92 + Math.random()*0.16));
+
+  return { accuracy, thinkMs };
+}
+
+function scheduleCpuMove(){
+  if(!G.vsCPU || !G.roundActive || G.roundOver) return;
+  const { accuracy, thinkMs } = computeCpuMove();
+  if(G.cpuTimer) clearTimeout(G.cpuTimer);
+  document.getElementById('cpuThinking1').classList.add('show');
+  G.cpuTimer = setTimeout(()=>attemptCpuMove(accuracy), thinkMs);
+}
+
+function attemptCpuMove(accuracy){
+  G.cpuTimer=null;
+  if(!G.vsCPU || !G.roundActive || G.roundOver){
+    document.getElementById('cpuThinking1').classList.remove('show');
+    return;
+  }
+
+  if(G.lockedOut1){ document.getElementById('cpuThinking1').classList.remove('show'); return; }
+  if(isFrozen(1)){
+    // Still frozen from a previous wrong guess — check back right after it thaws.
+    document.getElementById('cpuThinking1').classList.remove('show');
+    const wait=Math.max(150, G.frozenUntil1-performance.now()+150);
+    G.cpuTimer=setTimeout(()=>attemptCpuMove(accuracy), wait);
+    return;
+  }
+
+  document.getElementById('cpuThinking1').classList.remove('show');
+  const row=document.getElementById('btns1');
+  const buttons=[...row.querySelectorAll('button')];
+  if(buttons.length===0) return;
+  const correctBtn = buttons.find(b=>b.textContent===G.stimulus.answer);
+  const wrongBtns = buttons.filter(b=>b!==correctBtn);
+  const willBeCorrect = Math.random() < accuracy;
+  const chosenBtn = (willBeCorrect || wrongBtns.length===0) ? correctBtn : wrongBtns[randInt(0,wrongBtns.length-1)];
+  if(!chosenBtn) return;
+
+  tap(1, chosenBtn.textContent, chosenBtn, true);
+
+  // If that was correct, G.roundOver is now true and the guard at the top
+  // stops any further attempts. If it was wrong, re-derive fresh timing for
+  // the retry (same reasoning as the first attempt) — the next attempt will
+  // see isFrozen(1) and wait out the freeze automatically before it fires.
+  if(!G.roundOver && !G.lockedOut1){
+    const retry = computeCpuMove();
+    document.getElementById('cpuThinking1').classList.add('show');
+    G.cpuTimer=setTimeout(()=>attemptCpuMove(retry.accuracy), retry.thinkMs);
+  }
+}
+
+function tap(player, choice, btn, isCpu){
+  if(!G.roundActive || G.roundOver) return;
+  if(isFrozen(player)) return; // frozen — no taps register
+  if(player===1 && G.vsCPU && !isCpu) return; // P1's side is CPU-controlled — ignore stray human taps
+
+  if (localStorage.getItem('calcduel_seen_hint')!=='1'){
+    localStorage.setItem('calcduel_seen_hint','1');
+    document.getElementById('hint1').classList.remove('show');
+    document.getElementById('hint2').classList.remove('show');
+  }
+
+  const now=performance.now();
+  const correct = choice===G.stimulus.answer;
+
+  if(!correct){
+    // Freeze scales with how long THIS question normally takes (doubled for a
+    // reflex guess); the round's 2nd wrong answer locks the player out.
+    const guessN = player===1 ? ++G.roundGuesses1 : ++G.roundGuesses2;
+    const lockedNow = guessN>=MAX_GUESSES_PER_ROUND;
+    const freezeMs = lockedNow ? 0 : freezeDurationFor(now-G.roundStart);
+    if(player===1){ G.wrongTotal1++; if(lockedNow) G.lockedOut1=true; else G.frozenUntil1=now+freezeMs; }
+    else { G.wrongTotal2++; if(lockedNow) G.lockedOut2=true; else G.frozenUntil2=now+freezeMs; }
+    refreshFreezeVisuals(player);
+
+    // Blackout mode: a wrong guess blanks out 1-2 digits on THIS player's
+    // card (never the other player's) — they now have to recall the
+    // number(s) they just saw rather than simply re-reading them. The mask
+    // is temporary: it reverts back to the real digits exactly when the
+    // freeze thaws, same as a normal "decoy" window.
+    if(G.mode==='blackout'){
+      if(player===1) G.roundWrong1++; else G.roundWrong2++;
+      const rw = player===1 ? G.roundWrong1 : G.roundWrong2;
+      const maskCount = Math.min(rw,2);
+      const sym=document.getElementById('sSym'+player);
+      sym.textContent=maskEquationText(G.stimulus.symbol,maskCount);
+      sym.style.fontSize='';
+      requestAnimationFrame(fitStimSymbols);
+
+      const rtKey='maskRevertTimer'+player;
+      if(G[rtKey]) clearTimeout(G[rtKey]); // a repeat wrong guess extends freeze — reschedule the revert to match
+      if(!lockedNow) G[rtKey]=setTimeout(()=>{   // locked out: stays masked until the round ends
+        G[rtKey]=null;
+        if(G.roundOver) return; // round already moved on — nextRound() will render the real equation fresh
+        sym.textContent=G.stimulus.symbol;
+        sym.style.fontSize='';
+        requestAnimationFrame(fitStimSymbols);
+      }, freezeMs);
+    }
+
+    btn.classList.add('flash-wrong');
+    setTimeout(()=>btn.classList.remove('flash-wrong'),300);
+    const card=document.getElementById('stim'+player);
+    card.classList.add('wrong'); setTimeout(()=>card.classList.remove('wrong'),300);
+    const ov=document.getElementById('penO'+player);
+    ov.classList.add('show'); setTimeout(()=>ov.classList.remove('show'),200);
+    sndWrong();
+    particles(btn,false);
+    if(G.lockedOut1 && G.lockedOut2) endRoundNoPoint();   // nobody can answer any more
+    return;
+  }
+
+  // ── CORRECT — this player takes the round's point, round ends now ──
+  const rt=now-G.roundStart;
+  G.roundOver=true;
+  G.roundActive=false;
+  G.solvedFromMemory = G.isBlackoutRound && G.stimPhase==='hidden';
+  if(G.cpuTimer){ clearTimeout(G.cpuTimer); G.cpuTimer=null; }
+  document.getElementById('cpuThinking1').classList.remove('show');
+
+  if(player===1){ G.correct1++; G.times1.push(rt); }
+  else { G.correct2++; G.times2.push(rt); }
+
+  sndCorrect(player);
+  btn.classList.add('flash-correct');
+  const card=document.getElementById('stim'+player);
+  card.classList.add('correct'); setTimeout(()=>card.classList.remove('correct'),350);
+  const flash=document.getElementById('flash'+player);
+  flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+  document.getElementById('done'+player).classList.add('show');
+  particles(card,true);
+  particles(btn,true);
+
+  scheduleRoundEnd(player);
+}
+
+// ── ROUND END ─────────────────────────────────────────
+function scheduleRoundEnd(winner){
+  sndRoundEnd();
+  setTimeout(()=>showRoundResult(winner), 350);
+}
+
+// Both players locked out: the round ends with no point for anyone.
+function endRoundNoPoint(){
+  if(G.roundOver) return;
+  G.roundOver=true; G.roundActive=false;
+  if(G.cpuTimer){ clearTimeout(G.cpuTimer); G.cpuTimer=null; }
+  document.getElementById('cpuThinking1').classList.remove('show');
+  scheduleRoundEnd(0);
+}
+
+function showRoundResult(winner){
+  const wName = winner===0 ? 'NO POINT' : winner===1 ? G.p1 : G.p2;
+  const wClass = winner===0 ? 'tie' : winner===1 ? 'p1' : 'p2';
+
+  G.streakDots.push(winner);
+  updateStreak();
+
+  const eqText = G.stimulus.resultText || (G.stimulus.symbol + ' = ' + G.stimulus.answer);
+
+  ['rrW1','rrW2'].forEach(id=>{ const el=document.getElementById(id); el.textContent=wName; el.className='rr-winner '+wClass; });
+  ['rrT1a','rrT1b'].forEach(id=>document.getElementById(id).textContent=eqText);
+  ['rrT2a','rrT2b'].forEach(id=>document.getElementById(id).textContent = winner===0 ? (G.correct1+' – '+G.correct2) : (winner===1?G.correct1:G.correct2)+' pts');
+  ['rrN1a','rrN1b'].forEach(id=>document.getElementById(id).textContent='ANSWER');
+  ['rrN2a','rrN2b'].forEach(id=>document.getElementById(id).textContent = winner===0 ? '🔒 BOTH LOCKED OUT' : G.solvedFromMemory ? '🧠 FROM MEMORY' : wName.toUpperCase());
+
+  show('result');
+
+  // Auto-advance
+  setTimeout(()=>{
+    if(G.round>=G.total) showFinal();
+    else countdown(()=>nextRound());
+  }, BETWEEN_MS);
+}
+
+// ── FINAL ─────────────────────────────────────────────
+function showFinal(){
+  const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null;
+  const best= arr => arr.length ? Math.round(Math.min(...arr)) : null;
+
+  const avg1=avg(G.times1), avg2=avg(G.times2);
+  const best1=best(G.times1), best2=best(G.times2);
+
+  // Winner = most correct answers (this is what the match was actually scored on)
+  let winPlayer=0; // 0=tie, 1=p1, 2=p2
+  if(G.correct1>G.correct2) winPlayer=1;
+  else if(G.correct2>G.correct1) winPlayer=2;
+
+  const trophy1 = winPlayer===1?'🏆':winPlayer===2?'💔':'🤝';
+  const trophy2 = winPlayer===2?'🏆':winPlayer===1?'💔':'🤝';
+  const rl1 = winPlayer===1?{t:'WINNER',c:'win'}:winPlayer===2?{t:'LOSER',c:'lose'}:{t:'TIE',c:'win'};
+  const rl2 = winPlayer===2?{t:'WINNER',c:'win'}:winPlayer===1?{t:'LOSER',c:'lose'}:{t:'TIE',c:'win'};
+
+  document.getElementById('finTr1').textContent=trophy1;
+  document.getElementById('finTr2').textContent=trophy2;
+
+  const fw1=document.getElementById('finW1'); fw1.textContent=G.p1; fw1.className='fin-winner p1';
+  const fw2=document.getElementById('finW2'); fw2.textContent=G.p2; fw2.className='fin-winner p2';
+
+  const rl1el=document.getElementById('finRL1'); rl1el.textContent=rl1.t; rl1el.className='fin-result-label '+rl1.c;
+  const rl2el=document.getElementById('finRL2'); rl2el.textContent=rl2.t; rl2el.className='fin-result-label '+rl2.c;
+
+  const fmtMs=ms=>ms==null?'—':ms+'ms';
+
+  // Score is the headline stat; reaction time is revealed here for the
+  // first time, as a secondary "how you played" stat, not the win condition.
+  const gridHTML=(pClass,score,wrong,b,a)=>`
+    <div class="stat-box ${pClass}">
+      <div class="sv">${score}</div><div class="sk">CORRECT</div>
+    </div>
+    <div class="stat-box ${pClass}">
+      <div class="sv">${wrong}</div><div class="sk">WRONG</div>
+    </div>
+    <div class="stat-box ${pClass}">
+      <div class="sv" style="font-size:16px">${fmtMs(b)}</div>
+      <div class="sk">BEST RT</div>
+    </div>
+    <div class="stat-box ${pClass}">
+      <div class="sv" style="font-size:16px">${fmtMs(a)}</div>
+      <div class="sk">AVG RT</div>
+    </div>`;
+
+  document.getElementById('finGrid1').innerHTML=gridHTML('p1',G.correct1,G.wrongTotal1,best1,avg1);
+  document.getElementById('finGrid2').innerHTML=gridHTML('p2',G.correct2,G.wrongTotal2,best2,avg2);
+
+  // Verdict
+  let vTxt='';
+  if(G.correct1!==G.correct2){
+    const fName=G.correct1>G.correct2?G.p1:G.p2;
+    const fScore=Math.max(G.correct1,G.correct2), sScore=Math.min(G.correct1,G.correct2);
+    vTxt=`<strong>${fName}</strong> took the match <strong>${fScore}–${sScore}</strong> on correct answers.`;
+  } else {
+    vTxt=`Dead even at <strong>${G.correct1}–${G.correct2}</strong> — call it a draw.`;
+  }
+  if(avg1!=null && avg2!=null){
+    const rtName=avg1<avg2?G.p1:G.p2;
+    vTxt+=` <strong>${rtName}</strong> answered faster on average (${Math.min(avg1,avg2)}ms vs ${Math.max(avg1,avg2)}ms), for what it's worth.`;
+  }
+  document.getElementById('finVerdict').innerHTML=`<div class="vt">⚡ FINAL BREAKDOWN</div><div class="vb">${vTxt}</div>`;
+
+  // Style winner/loser halves
+  const h1=document.getElementById('finHalf1'), h2=document.getElementById('finHalf2');
+  h1.className='fin-half top'; h2.className='fin-half';
+  if(winPlayer===1){ h1.classList.add('winner-bg','winner-flash'); h2.classList.add('loser-bg'); }
+  else if(winPlayer===2){ h2.classList.add('winner-bg','winner-flash'); h1.classList.add('loser-bg'); }
+
+  // Clear any leftover content in the old category-table slots (unused now)
+  const catEl1=document.getElementById('catTable1');
+  const catEl2=document.getElementById('catTable2');
+  if(catEl1) catEl1.innerHTML='';
+  if(catEl2) catEl2.innerHTML='';
+
+  sndFanfare();
+  show('final');
+}
+
+document.getElementById('againBtn').addEventListener('click',()=>show('title'));
+
+// ── HELPERS ──────────────────────────────────────────
+function updateScoreDisplay(){
+  document.getElementById('gScore1').textContent=G.correct1;
+  document.getElementById('gScore2').textContent=G.correct2;
+}
+
+function updateStreak(){
+  const row=document.getElementById('streakRow'); row.innerHTML='';
+  for(let i=0;i<G.total;i++){
+    const d=document.createElement('div'); d.className='s-dot';
+    if(G.streakDots[i]===1) d.classList.add('p1');
+    else if(G.streakDots[i]===2) d.classList.add('p2');
+    row.appendChild(d);
+  }
+}
+
+function particles(el,ok){
+  const r=el.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const cols=ok?['#0F9E58','#7FFFC4','#E8A200','#FFD866']:['#D93B14','#FF8F7A'];
+  const count=ok?18:7;
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div'); p.className='particle';
+    const sz=4+Math.random()*9;
+    const round=Math.random()<0.6;
+    const ang=Math.random()*Math.PI*2, dist=(ok?40:25)+Math.random()*(ok?85:45);
+    const gravity=ok?20+Math.random()*30:0; // slight downward arc for correct bursts
+    const rot=(Math.random()*360-180)+'deg';
+    p.style.cssText=`width:${sz}px;height:${sz}px;left:${cx}px;top:${cy}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${round?'50%':'2px'};--tx:${Math.cos(ang)*dist}px;--ty:${Math.sin(ang)*dist+gravity}px;--rot:${rot};animation-duration:${.45+Math.random()*.3}s`;
+    document.body.appendChild(p); setTimeout(()=>p.remove(),900);
+  }
+}
+
+// ── AUDIO ENGINE ─────────────────────────────────────
+const SFX_GAIN = 0.88; // slight overall trim for headroom
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function tone(freq, type, gainVal, startDelay, duration, fadeOut=true){
+  const ctx=getCtx();
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type=type; osc.frequency.value=freq;
+  const t=ctx.currentTime+startDelay;
+  gain.gain.setValueAtTime(gainVal*SFX_GAIN,t);
+  if(fadeOut) gain.gain.exponentialRampToValueAtTime(0.001,t+duration);
+  osc.start(t); osc.stop(t+duration+0.05);
+}
+
+function noise(gainVal, startDelay, duration, filterFreq=180, filterType='bandpass'){
+  const ctx=getCtx();
+  const bufSize=ctx.sampleRate*duration;
+  const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<bufSize;i++) data[i]=(Math.random()*2-1);
+  const src=ctx.createBufferSource();
+  src.buffer=buf;
+  const gain=ctx.createGain();
+  const filter=ctx.createBiquadFilter();
+  filter.type=filterType; filter.frequency.value=filterFreq; filter.Q.value=0.8;
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  const t=ctx.currentTime+startDelay;
+  gain.gain.setValueAtTime(gainVal*SFX_GAIN,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+duration);
+  src.start(t); src.stop(t+duration+0.05);
+}
+
+// Correct — a short percussive "click" transient underneath two rising tones,
+// so the hit reads as an impact rather than just a beep.
+function sndCorrect(player){
+  const base = player===1 ? 520 : 440;
+  noise(0.18, 0, 0.035, 3200, 'highpass'); // tight bright transient click — the "punch"
+  tone(base,      'sine', 0.26, 0,    0.08);
+  tone(base*1.25, 'sine', 0.20, 0.07, 0.10);
+  tone(base*2,    'sine', 0.06, 0,    0.05); // subtle high sparkle for sheen
+}
+
+// Wrong — low thud
+function sndWrong(){
+  noise(0.32, 0, 0.12);
+  tone(110, 'sawtooth', 0.15, 0, 0.10);
+}
+
+// Timeout — descending two-tone
+function sndTimeout(){
+  tone(330, 'sine', 0.20, 0,    0.12);
+  tone(220, 'sine', 0.15, 0.10, 0.14);
+}
+
+// Round end — neutral soft chord
+function sndRoundEnd(){
+  tone(440, 'sine', 0.12, 0,    0.18);
+  tone(554, 'sine', 0.09, 0.04, 0.16);
+}
+
+// Tick — very short click in last second
+let lastTick=0;
+function sndTick(){
+  const now=Date.now();
+  if(now-lastTick < 120) return;
+  lastTick=now;
+  tone(900, 'square', 0.06, 0, 0.025, true);
+}
+
+// Fanfare — ascending three-note chord
+function sndFanfare(){
+  tone(523, 'sine', 0.22, 0,    0.3);
+  tone(659, 'sine', 0.20, 0.1,  0.3);
+  tone(784, 'sine', 0.25, 0.22, 0.45);
+}
+
+</script>
+</body>
+</html>
